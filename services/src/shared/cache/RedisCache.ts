@@ -195,3 +195,4 @@ async size(): Promise<number> {
     return 0;  // Returning a default value on error (optional)
   }
 }
+}
