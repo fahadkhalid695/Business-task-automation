@@ -221,3 +221,6 @@ for (const check of checks) {
     });
   }
 }  // This closing brace is necessary to close the 'for' loop
+
+  }
+}
