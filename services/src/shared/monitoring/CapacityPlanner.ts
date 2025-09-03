@@ -184,6 +184,7 @@ export class CapacityPlanner {
       { name: 'network', value: data.network, thresholds: this.thresholds.network }
     ];
 
+
 for (const check of checks) {
   if (check.value >= check.thresholds.critical) {
     // Critical usage detected
@@ -219,4 +220,4 @@ for (const check of checks) {
       threshold: check.thresholds.warning
     });
   }
-}
+}  // This closing brace is necessary to close the 'for' loop
