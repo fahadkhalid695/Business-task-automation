@@ -1,0 +1,115 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 300
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 600
+      arrivalRate: 20
+      name: "Sustained load"
+    - duration: 300
+      arrivalRate: 50
+      name: "Peak load"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+  processor: './artillery-processor.js'
+  variables:
+    testUsers:
+      - email: 'user1@test.com'
+        password: 'TestUser123!'
+      - email: 'user2@test.com'
+        password: 'TestUser123!'
+      - email: 'user3@test.com'
+        password: 'TestUser123!'
+
+scenarios:
+  - name: "Authentication Flow"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/v1/auth/login"
+          json:
+            email: "{{ $randomPick(testUsers).email }}"
+            password: "{{ $randomPick(testUsers).password }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - get:
+          url: "/api/v1/user/profile"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  - name: "Workflow Operations"
+    weight: 40
+    flow:
+      - function: "authenticate"
+      - post:
+          url: "/api/v1/workflows"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Artillery Test Workflow {{ $randomString() }}"
+            type: "email-processing"
+            steps:
+              - type: "email-trigger"
+                config:
+                  filter: "subject:test"
+              - type: "ai-processing"
+                config:
+                  model: "document-classifier"
+          capture:
+            - json: "$.id"
+              as: "workflowId"
+      - post:
+          url: "/api/v1/workflows/{{ workflowId }}/execute"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            input:
+              subject: "Test Email {{ $randomString() }}"
+              sender: "test{{ $randomInt(1, 1000) }}@example.com"
+
+  - name: "AI/ML Operations"
+    weight: 30
+    flow:
+      - function: "authenticate"
+      - post:
+          url: "/api/v1/ai/inference"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            model: "document-classifier"
+            input:
+              text: "{{ $randomString(100) }}"
+              metadata:
+                source: "artillery-test"
+      - get:
+          url: "/api/v1/ai/models"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  - name: "Data Processing"
+    weight: 10
+    flow:
+      - function: "authenticate"
+      - post:
+          url: "/api/v1/data/upload"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            type: "json"
+            data: "{{ generateTestData() }}"
+            processing:
+              validate: true
+              transform: ["normalize"]
+
+plugins:
+  expect: {}
+  metrics-by-endpoint: {}
+  hdrhistogram: {}
+
+ensure:
+  p95: 3000
+  p99: 5000
+  maxErrorRate: 1

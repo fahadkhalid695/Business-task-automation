@@ -1,0 +1,1444 @@
+openapi: 3.0.3
+info:
+  title: Business Task Automation Platform API
+  description: |
+    Comprehensive API for the Business Task Automation Platform - an AI-powered system 
+    for automating various business operations across multiple domains.
+    
+    ## Features
+    - Administrative task automation (email, calendar, documents)
+    - Data analytics and reporting
+    - Communication services (chatbot, transcription, translation)
+    - Project and workflow management
+    - Finance and HR automation
+    - Creative content generation
+    - AI/ML model integration
+    
+    ## Authentication
+    All endpoints require JWT authentication. Include the token in the Authorization header:
+    `Authorization: Bearer <jwt_token>`
+    
+    ## Rate Limiting
+    API requests are rate limited based on user tier:
+    - Standard: 1000 requests/hour
+    - Premium: 5000 requests/hour
+    - Enterprise: Custom limits
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@business-automation.com
+    url: https://docs.business-automation.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.business-automation.com/v1
+    description: Production server
+  - url: https://staging-api.business-automation.com/v1
+    description: Staging server
+  - url: http://localhost:3000/api/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and return JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: securePassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: User registration
+      description: Register a new user account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh JWT token
+      description: Get a new JWT token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # User Management Endpoints
+  /users/profile:
+    get:
+      tags: [Users]
+      summary: Get user profile
+      description: Retrieve current user's profile information
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [Users]
+      summary: Update user profile
+      description: Update current user's profile information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/preferences:
+    get:
+      tags: [Users]
+      summary: Get user preferences
+      description: Retrieve user's system preferences
+      responses:
+        '200':
+          description: Preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+
+    put:
+      tags: [Users]
+      summary: Update user preferences
+      description: Update user's system preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPreferences'
+      responses:
+        '200':
+          description: Preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+
+  # Task Management Endpoints
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: List tasks
+      description: Retrieve a paginated list of tasks
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - name: priority
+          in: query
+          schema:
+            $ref: '#/components/schemas/Priority'
+        - name: assignedTo
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+
+    post:
+      tags: [Tasks]
+      summary: Create task
+      description: Create a new task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /tasks/{taskId}:
+    get:
+      tags: [Tasks]
+      summary: Get task
+      description: Retrieve a specific task by ID
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '200':
+          description: Task retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Tasks]
+      summary: Update task
+      description: Update a specific task
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Tasks]
+      summary: Delete task
+      description: Delete a specific task
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '204':
+          description: Task deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Administrative Service Endpoints
+  /administrative/emails/process:
+    post:
+      tags: [Administrative]
+      summary: Process emails
+      description: Process and categorize emails automatically
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emails:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/EmailMessage'
+      responses:
+        '200':
+          description: Emails processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  processedEmails:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProcessedEmail'
+
+  /administrative/calendar/schedule:
+    post:
+      tags: [Administrative]
+      summary: Schedule meeting
+      description: Schedule a meeting with conflict detection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingRequest'
+      responses:
+        '201':
+          description: Meeting scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarEvent'
+        '409':
+          description: Scheduling conflict detected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conflicts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CalendarEvent'
+                  suggestions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TimeSlot'
+
+  /administrative/documents/generate:
+    post:
+      tags: [Administrative]
+      summary: Generate document
+      description: Generate a document from template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentGenerationRequest'
+      responses:
+        '201':
+          description: Document generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+
+  # Data Analytics Endpoints
+  /analytics/data/clean:
+    post:
+      tags: [Analytics]
+      summary: Clean dataset
+      description: Clean and preprocess data
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                options:
+                  $ref: '#/components/schemas/DataCleaningOptions'
+      responses:
+        '200':
+          description: Data cleaned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CleanedDataResponse'
+
+  /analytics/reports/generate:
+    post:
+      tags: [Analytics]
+      summary: Generate report
+      description: Generate automated report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        '201':
+          description: Report generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
+  # Communication Service Endpoints
+  /communication/chatbot/message:
+    post:
+      tags: [Communication]
+      summary: Send chatbot message
+      description: Send message to chatbot and get response
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  example: "How do I reset my password?"
+                context:
+                  type: object
+                  description: Additional context for the conversation
+      responses:
+        '200':
+          description: Chatbot response generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatbotResponse'
+
+  /communication/transcribe:
+    post:
+      tags: [Communication]
+      summary: Transcribe audio
+      description: Convert audio to text
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                language:
+                  type: string
+                  example: "en-US"
+      responses:
+        '200':
+          description: Audio transcribed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionResponse'
+
+  /communication/translate:
+    post:
+      tags: [Communication]
+      summary: Translate text
+      description: Translate text between languages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranslationRequest'
+      responses:
+        '200':
+          description: Text translated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranslationResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    
+    LimitParam:
+      name: limit
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    
+    SortParam:
+      name: sort
+      in: query
+      description: Field to sort by
+      schema:
+        type: string
+        default: createdAt
+    
+    TaskIdParam:
+      name: taskId
+      in: path
+      required: true
+      description: Task ID
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # Authentication Schemas
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            token:
+              type: string
+              example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            refreshToken:
+              type: string
+            expiresIn:
+              type: integer
+              example: 3600
+
+    TokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+            expiresIn:
+              type: integer
+
+    UserRegistration:
+      type: object
+      required: [email, password, firstName, lastName, role]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        department:
+          type: string
+
+    # User Schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        department:
+          type: string
+        isActive:
+          type: boolean
+        lastLogin:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/User'
+
+    UserUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        department:
+          type: string
+        preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    UserPreferences:
+      type: object
+      properties:
+        theme:
+          type: string
+          enum: [light, dark, auto]
+          default: light
+        language:
+          type: string
+          default: en
+        timezone:
+          type: string
+          default: UTC
+        notifications:
+          type: object
+          properties:
+            email:
+              type: boolean
+              default: true
+            push:
+              type: boolean
+              default: true
+            sms:
+              type: boolean
+              default: false
+
+    UserRole:
+      type: string
+      enum: [admin, manager, user, viewer]
+
+    # Task Schemas
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/TaskType'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        title:
+          type: string
+        description:
+          type: string
+        assignedTo:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        data:
+          type: object
+          description: Task-specific data
+        workflow:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStep'
+        dueDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    TaskResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Task'
+
+    TaskListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    TaskCreate:
+      type: object
+      required: [type, title, priority]
+      properties:
+        type:
+          $ref: '#/components/schemas/TaskType'
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          $ref: '#/components/schemas/Priority'
+        assignedTo:
+          type: string
+          format: uuid
+        data:
+          type: object
+        dueDate:
+          type: string
+          format: date-time
+
+    TaskUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        title:
+          type: string
+        description:
+          type: string
+        assignedTo:
+          type: string
+          format: uuid
+        dueDate:
+          type: string
+          format: date-time
+
+    TaskType:
+      type: string
+      enum: [
+        email_processing,
+        calendar_scheduling,
+        document_generation,
+        data_analysis,
+        report_generation,
+        chatbot_interaction,
+        transcription,
+        translation,
+        project_management,
+        expense_processing,
+        content_generation
+      ]
+
+    TaskStatus:
+      type: string
+      enum: [pending, in_progress, completed, failed, cancelled]
+
+    Priority:
+      type: string
+      enum: [low, medium, high, urgent]
+
+    WorkflowStep:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [ai_processing, data_transformation, external_api, user_approval, notification, conditional]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed, skipped]
+        config:
+          type: object
+        result:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    # Administrative Schemas
+    EmailMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        from:
+          type: string
+          format: email
+        to:
+          type: array
+          items:
+            type: string
+            format: email
+        subject:
+          type: string
+        body:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              filename:
+                type: string
+              size:
+                type: integer
+              contentType:
+                type: string
+
+    ProcessedEmail:
+      allOf:
+        - $ref: '#/components/schemas/EmailMessage'
+        - type: object
+          properties:
+            category:
+              type: string
+              enum: [urgent, important, spam, newsletter, support]
+            priority:
+              $ref: '#/components/schemas/Priority'
+            sentiment:
+              type: object
+              properties:
+                score:
+                  type: number
+                  minimum: -1
+                  maximum: 1
+                label:
+                  type: string
+                  enum: [positive, negative, neutral]
+            actionItems:
+              type: array
+              items:
+                type: string
+            suggestedResponse:
+              type: string
+
+    CalendarEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        attendees:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+              name:
+                type: string
+              status:
+                type: string
+                enum: [pending, accepted, declined, tentative]
+        location:
+          type: string
+        isRecurring:
+          type: boolean
+        recurrenceRule:
+          type: string
+        reminders:
+          type: array
+          items:
+            type: object
+            properties:
+              minutes:
+                type: integer
+              method:
+                type: string
+                enum: [email, popup, sms]
+
+    MeetingRequest:
+      type: object
+      required: [title, startTime, endTime, attendees]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        attendees:
+          type: array
+          items:
+            type: string
+            format: email
+        location:
+          type: string
+        isRecurring:
+          type: boolean
+        recurrenceRule:
+          type: string
+
+    TimeSlot:
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        availability:
+          type: string
+          enum: [available, busy, tentative]
+
+    DocumentGenerationRequest:
+      type: object
+      required: [templateType, data]
+      properties:
+        templateType:
+          type: string
+          enum: [report, contract, proposal, meeting_notes, invoice]
+        data:
+          type: object
+          description: Template-specific data
+        format:
+          type: string
+          enum: [pdf, docx, html]
+          default: pdf
+        options:
+          type: object
+          properties:
+            includeHeader:
+              type: boolean
+              default: true
+            includeFooter:
+              type: boolean
+              default: true
+            watermark:
+              type: string
+
+    DocumentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            filename:
+              type: string
+            url:
+              type: string
+            size:
+              type: integer
+            format:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+
+    # Analytics Schemas
+    DataCleaningOptions:
+      type: object
+      properties:
+        removeDuplicates:
+          type: boolean
+          default: true
+        handleMissingValues:
+          type: string
+          enum: [remove, fill_mean, fill_median, fill_mode]
+          default: remove
+        normalizeText:
+          type: boolean
+          default: true
+        validateFormats:
+          type: boolean
+          default: true
+        customRules:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              rule:
+                type: string
+              action:
+                type: string
+
+    CleanedDataResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            originalRows:
+              type: integer
+            cleanedRows:
+              type: integer
+            removedRows:
+              type: integer
+            qualityScore:
+              type: number
+              minimum: 0
+              maximum: 1
+            issues:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  count:
+                    type: integer
+                  description:
+                    type: string
+            downloadUrl:
+              type: string
+
+    ReportRequest:
+      type: object
+      required: [type, dataSource]
+      properties:
+        type:
+          type: string
+          enum: [sales, financial, performance, custom]
+        dataSource:
+          type: string
+        dateRange:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date
+            end:
+              type: string
+              format: date
+        filters:
+          type: object
+        groupBy:
+          type: array
+          items:
+            type: string
+        metrics:
+          type: array
+          items:
+            type: string
+        format:
+          type: string
+          enum: [pdf, excel, csv, json]
+          default: pdf
+
+    ReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            type:
+              type: string
+            status:
+              type: string
+              enum: [generating, completed, failed]
+            downloadUrl:
+              type: string
+            summary:
+              type: object
+            createdAt:
+              type: string
+              format: date-time
+
+    # Communication Schemas
+    ChatbotResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            response:
+              type: string
+            confidence:
+              type: number
+              minimum: 0
+              maximum: 1
+            intent:
+              type: string
+            entities:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  value:
+                    type: string
+                  confidence:
+                    type: number
+            suggestions:
+              type: array
+              items:
+                type: string
+            requiresHuman:
+              type: boolean
+
+    TranscriptionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            text:
+              type: string
+            confidence:
+              type: number
+              minimum: 0
+              maximum: 1
+            language:
+              type: string
+            speakers:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  segments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        start:
+                          type: number
+                        end:
+                          type: number
+                        text:
+                          type: string
+            duration:
+              type: number
+
+    TranslationRequest:
+      type: object
+      required: [text, targetLanguage]
+      properties:
+        text:
+          type: string
+        sourceLanguage:
+          type: string
+          description: Auto-detect if not provided
+        targetLanguage:
+          type: string
+        context:
+          type: string
+          description: Additional context for better translation
+
+    TranslationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            translatedText:
+              type: string
+            sourceLanguage:
+              type: string
+            targetLanguage:
+              type: string
+            confidence:
+              type: number
+              minimum: 0
+              maximum: 1
+            alternatives:
+              type: array
+              items:
+                type: string
+
+    # Common Schemas
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        pages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+        meta:
+          type: object
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+            requestId:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: UNAUTHORIZED
+                  message:
+                    type: string
+                    example: Authentication required
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: FORBIDDEN
+                  message:
+                    type: string
+                    example: Insufficient permissions
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: NOT_FOUND
+                  message:
+                    type: string
+                    example: Resource not found
+
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: CONFLICT
+                  message:
+                    type: string
+                    example: Resource already exists
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: RATE_LIMITED
+                  message:
+                    type: string
+                    example: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per hour
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Time when rate limit resets (Unix timestamp)
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: INTERNAL_ERROR
+                  message:
+                    type: string
+                    example: An unexpected error occurred

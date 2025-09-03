@@ -1,0 +1,84 @@
+# Staging Environment Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: business-automation-config-staging
+  namespace: business-automation
+data:
+  NODE_ENV: "staging"
+  LOG_LEVEL: "info"
+  API_GATEWAY_PORT: "3000"
+  TASK_ORCHESTRATOR_PORT: "3001"
+  AI_ML_ENGINE_PORT: "3002"
+  MAX_CONCURRENT_TASKS: "50"
+  CACHE_TTL: "600"
+  SESSION_TIMEOUT: "7200"
+  RATE_LIMIT_WINDOW: "60000"
+  RATE_LIMIT_MAX: "500"
+  CORS_ORIGIN: "https://staging.business-automation.example.com"
+  ENABLE_SWAGGER: "true"
+  ENABLE_DEBUG_ROUTES: "false"
+  DATABASE_POOL_SIZE: "10"
+  REDIS_POOL_SIZE: "10"
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: business-automation-secrets-staging
+  namespace: business-automation
+type: Opaque
+stringData:
+  # These should be set via external secret management in real deployment
+  MONGODB_URI: "mongodb://admin:CHANGE_ME@docdb-cluster.staging.amazonaws.com:27017/business-automation-staging?ssl=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+  REDIS_URL: "rediss://:CHANGE_ME@redis-cluster.staging.amazonaws.com:6379"
+  JWT_SECRET: "staging-jwt-secret-should-be-generated"
+  JWT_EXPIRES_IN: "24h"
+  OPENAI_API_KEY: "sk-staging-key-placeholder"
+  ENCRYPTION_KEY: "staging-encryption-key-32-chars"
+  WEBHOOK_SECRET: "staging-webhook-secret"
+  SMTP_HOST: "smtp.staging.example.com"
+  SMTP_PORT: "587"
+  SMTP_USER: "noreply@staging.business-automation.example.com"
+  SMTP_PASS: "CHANGE_ME"
+  AWS_ACCESS_KEY_ID: "CHANGE_ME"
+  AWS_SECRET_ACCESS_KEY: "CHANGE_ME"
+  GOOGLE_CLIENT_ID: "CHANGE_ME"
+  GOOGLE_CLIENT_SECRET: "CHANGE_ME"
+---
+# Staging-specific resource limits (medium)
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: business-automation-limits-staging
+  namespace: business-automation
+spec:
+  limits:
+  - default:
+      cpu: "1"
+      memory: "2Gi"
+    defaultRequest:
+      cpu: "200m"
+      memory: "256Mi"
+    type: Container
+  - default:
+      storage: "20Gi"
+    type: PersistentVolumeClaim
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: business-automation-quota-staging
+  namespace: business-automation
+spec:
+  hard:
+    requests.cpu: "10"
+    requests.memory: 20Gi
+    limits.cpu: "20"
+    limits.memory: 40Gi
+    persistentvolumeclaims: "10"
+    services: "15"
+    secrets: "15"
+    configmaps: "15"

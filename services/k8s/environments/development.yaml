@@ -1,0 +1,80 @@
+# Development Environment Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: business-automation-config-dev
+  namespace: business-automation
+data:
+  NODE_ENV: "development"
+  LOG_LEVEL: "debug"
+  API_GATEWAY_PORT: "3000"
+  TASK_ORCHESTRATOR_PORT: "3001"
+  AI_ML_ENGINE_PORT: "3002"
+  MAX_CONCURRENT_TASKS: "10"
+  CACHE_TTL: "300"
+  SESSION_TIMEOUT: "3600"
+  RATE_LIMIT_WINDOW: "60000"
+  RATE_LIMIT_MAX: "1000"
+  CORS_ORIGIN: "http://localhost:3001,http://localhost:3000"
+  ENABLE_SWAGGER: "true"
+  ENABLE_DEBUG_ROUTES: "true"
+  DATABASE_POOL_SIZE: "5"
+  REDIS_POOL_SIZE: "5"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: business-automation-secrets-dev
+  namespace: business-automation
+type: Opaque
+stringData:
+  MONGODB_URI: "mongodb://admin:password123@mongodb:27017/business-automation-dev?authSource=admin"
+  REDIS_URL: "redis://redis:6379/0"
+  JWT_SECRET: "dev-jwt-secret-change-in-production"
+  JWT_EXPIRES_IN: "7d"
+  OPENAI_API_KEY: "sk-dev-key-placeholder"
+  ENCRYPTION_KEY: "dev-encryption-key-32-chars-long"
+  WEBHOOK_SECRET: "dev-webhook-secret"
+  SMTP_HOST: "localhost"
+  SMTP_PORT: "1025"
+  SMTP_USER: ""
+  SMTP_PASS: ""
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_SECRET: ""
+---
+# Development-specific resource limits (lower)
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: business-automation-limits-dev
+  namespace: business-automation
+spec:
+  limits:
+  - default:
+      cpu: "500m"
+      memory: "1Gi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container
+  - default:
+      storage: "5Gi"
+    type: PersistentVolumeClaim
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: business-automation-quota-dev
+  namespace: business-automation
+spec:
+  hard:
+    requests.cpu: "5"
+    requests.memory: 10Gi
+    limits.cpu: "10"
+    limits.memory: 20Gi
+    persistentvolumeclaims: "5"
+    services: "10"
+    secrets: "10"
+    configmaps: "10"

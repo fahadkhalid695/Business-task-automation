@@ -1,0 +1,496 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: business-automation
+
+jobs:
+  # Security and code quality checks
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Run Semgrep security scan
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/secrets
+          p/owasp-top-ten
+
+  # Code quality and linting
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: |
+          services/package-lock.json
+          client/package-lock.json
+
+    - name: Install dependencies - Services
+      working-directory: ./services
+      run: npm ci
+
+    - name: Install dependencies - Client
+      working-directory: ./client
+      run: npm ci
+
+    - name: Lint services
+      working-directory: ./services
+      run: npm run lint
+
+    - name: Lint client
+      working-directory: ./client
+      run: npm run lint
+
+    - name: Type check services
+      working-directory: ./services
+      run: npm run type-check
+
+    - name: Type check client
+      working-directory: ./client
+      run: npm run type-check
+
+  # Unit and integration tests
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:5.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password123
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongo --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:6.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: |
+          services/package-lock.json
+          client/package-lock.json
+
+    - name: Install dependencies - Services
+      working-directory: ./services
+      run: npm ci
+
+    - name: Install dependencies - Client
+      working-directory: ./client
+      run: npm ci
+
+    - name: Run unit tests - Services
+      working-directory: ./services
+      run: npm test -- --coverage --watchAll=false
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://admin:password123@localhost:27017/business-automation-test?authSource=admin
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-secret
+
+    - name: Run unit tests - Client
+      working-directory: ./client
+      run: npm test -- --coverage --watchAll=false
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./services/coverage/lcov.info,./client/coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+
+  # Build and push Docker images
+  build:
+    name: Build Images
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, test]
+    if: github.event_name != 'pull_request'
+    outputs:
+      image-digest-api-gateway: ${{ steps.build-api-gateway.outputs.digest }}
+      image-digest-task-orchestrator: ${{ steps.build-task-orchestrator.outputs.digest }}
+      image-digest-ai-ml-engine: ${{ steps.build-ai-ml-engine.outputs.digest }}
+      image-digest-frontend: ${{ steps.build-frontend.outputs.digest }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+
+    - name: Build and push API Gateway
+      id: build-api-gateway
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services
+        file: ./services/Dockerfile.api-gateway
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ github.repository }}/api-gateway:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+    - name: Build and push Task Orchestrator
+      id: build-task-orchestrator
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services
+        file: ./services/Dockerfile.task-orchestrator
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ github.repository }}/task-orchestrator:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+    - name: Build and push AI/ML Engine
+      id: build-ai-ml-engine
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services
+        file: ./services/Dockerfile.ai-ml-engine
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ github.repository }}/ai-ml-engine:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+    - name: Build and push Frontend
+      id: build-frontend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./client
+        file: ./client/Dockerfile
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ github.repository }}/frontend:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+    - name: Run container security scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/api-gateway:${{ steps.meta.outputs.tags }}
+        format: 'sarif'
+        output: 'trivy-image-results.sarif'
+
+    - name: Upload image scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-image-results.sarif'
+
+  # End-to-end tests
+  e2e-test:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name != 'pull_request'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./client
+      run: npm ci
+
+    - name: Start services with Docker Compose
+      run: |
+        docker-compose up -d
+        sleep 30  # Wait for services to be ready
+
+    - name: Run Cypress E2E tests
+      working-directory: ./client
+      run: npm run cypress:run
+      env:
+        CYPRESS_baseUrl: http://localhost:3001
+
+    - name: Upload Cypress screenshots
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: cypress-screenshots
+        path: client/cypress/screenshots
+
+    - name: Upload Cypress videos
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: cypress-videos
+        path: client/cypress/videos
+
+    - name: Stop services
+      if: always()
+      run: docker-compose down
+
+  # Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, e2e-test]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.business-automation.example.com
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > kubeconfig
+        export KUBECONFIG=kubeconfig
+
+    - name: Deploy to staging
+      run: |
+        export KUBECONFIG=kubeconfig
+        
+        # Update image tags in deployment files
+        sed -i "s|business-automation/api-gateway:latest|${{ env.REGISTRY }}/${{ github.repository }}/api-gateway:develop|g" services/k8s/deployments.yaml
+        sed -i "s|business-automation/task-orchestrator:latest|${{ env.REGISTRY }}/${{ github.repository }}/task-orchestrator:develop|g" services/k8s/deployments.yaml
+        sed -i "s|business-automation/ai-ml-engine:latest|${{ env.REGISTRY }}/${{ github.repository }}/ai-ml-engine:develop|g" services/k8s/deployments.yaml
+        sed -i "s|business-automation/frontend:latest|${{ env.REGISTRY }}/${{ github.repository }}/frontend:develop|g" services/k8s/deployments.yaml
+        
+        # Apply Kubernetes manifests
+        kubectl apply -f services/k8s/namespace.yaml
+        kubectl apply -f services/k8s/configmap.yaml
+        kubectl apply -f services/k8s/secrets.yaml
+        kubectl apply -f services/k8s/rbac.yaml
+        kubectl apply -f services/k8s/statefulsets.yaml
+        kubectl apply -f services/k8s/deployments.yaml
+        kubectl apply -f services/k8s/services.yaml
+        kubectl apply -f services/k8s/ingress.yaml
+        kubectl apply -f services/k8s/hpa.yaml
+        kubectl apply -f services/k8s/vpa.yaml
+        
+        # Wait for rollout to complete
+        kubectl rollout status deployment/business-automation-api-gateway -n business-automation --timeout=300s
+        kubectl rollout status deployment/business-automation-task-orchestrator -n business-automation --timeout=300s
+        kubectl rollout status deployment/business-automation-ai-ml-engine -n business-automation --timeout=300s
+        kubectl rollout status deployment/business-automation-frontend -n business-automation --timeout=300s
+
+    - name: Run deployment verification
+      run: |
+        export KUBECONFIG=kubeconfig
+        
+        # Check pod status
+        kubectl get pods -n business-automation
+        
+        # Check service endpoints
+        kubectl get endpoints -n business-automation
+        
+        # Run health checks
+        kubectl exec -n business-automation deployment/business-automation-api-gateway -- curl -f http://localhost:3000/health
+        kubectl exec -n business-automation deployment/business-automation-frontend -- curl -f http://localhost:8080/health
+
+  # Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'release'
+    environment:
+      name: production
+      url: https://business-automation.example.com
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > kubeconfig
+        export KUBECONFIG=kubeconfig
+
+    - name: Blue-Green Deployment
+      run: |
+        export KUBECONFIG=kubeconfig
+        
+        # Get release tag
+        RELEASE_TAG=${GITHUB_REF#refs/tags/}
+        
+        # Update image tags for production
+        sed -i "s|business-automation/api-gateway:latest|${{ env.REGISTRY }}/${{ github.repository }}/api-gateway:${RELEASE_TAG}|g" services/k8s/deployments.yaml
+        sed -i "s|business-automation/task-orchestrator:latest|${{ env.REGISTRY }}/${{ github.repository }}/task-orchestrator:${RELEASE_TAG}|g" services/k8s/deployments.yaml
+        sed -i "s|business-automation/ai-ml-engine:latest|${{ env.REGISTRY }}/${{ github.repository }}/ai-ml-engine:${RELEASE_TAG}|g" services/k8s/deployments.yaml
+        sed -i "s|business-automation/frontend:latest|${{ env.REGISTRY }}/${{ github.repository }}/frontend:${RELEASE_TAG}|g" services/k8s/deployments.yaml
+        
+        # Create green deployment
+        sed 's/business-automation-/business-automation-green-/g' services/k8s/deployments.yaml > services/k8s/deployments-green.yaml
+        
+        # Deploy green environment
+        kubectl apply -f services/k8s/deployments-green.yaml
+        
+        # Wait for green deployment to be ready
+        kubectl rollout status deployment/business-automation-green-api-gateway -n business-automation --timeout=600s
+        kubectl rollout status deployment/business-automation-green-task-orchestrator -n business-automation --timeout=600s
+        kubectl rollout status deployment/business-automation-green-ai-ml-engine -n business-automation --timeout=600s
+        kubectl rollout status deployment/business-automation-green-frontend -n business-automation --timeout=600s
+        
+        # Run smoke tests on green environment
+        kubectl exec -n business-automation deployment/business-automation-green-api-gateway -- curl -f http://localhost:3000/health
+        kubectl exec -n business-automation deployment/business-automation-green-frontend -- curl -f http://localhost:8080/health
+        
+        # Switch traffic to green (update service selectors)
+        kubectl patch service business-automation-api-gateway -n business-automation -p '{"spec":{"selector":{"app":"business-automation","component":"green-api-gateway"}}}'
+        kubectl patch service business-automation-task-orchestrator -n business-automation -p '{"spec":{"selector":{"app":"business-automation","component":"green-task-orchestrator"}}}'
+        kubectl patch service business-automation-ai-ml-engine -n business-automation -p '{"spec":{"selector":{"app":"business-automation","component":"green-ai-ml-engine"}}}'
+        kubectl patch service business-automation-frontend -n business-automation -p '{"spec":{"selector":{"app":"business-automation","component":"green-frontend"}}}'
+        
+        # Wait and verify traffic switch
+        sleep 30
+        
+        # Clean up old blue deployment
+        kubectl delete deployment business-automation-api-gateway -n business-automation --ignore-not-found=true
+        kubectl delete deployment business-automation-task-orchestrator -n business-automation --ignore-not-found=true
+        kubectl delete deployment business-automation-ai-ml-engine -n business-automation --ignore-not-found=true
+        kubectl delete deployment business-automation-frontend -n business-automation --ignore-not-found=true
+        
+        # Rename green to blue for next deployment
+        kubectl patch deployment business-automation-green-api-gateway -n business-automation -p '{"metadata":{"name":"business-automation-api-gateway"}}'
+        kubectl patch deployment business-automation-green-task-orchestrator -n business-automation -p '{"metadata":{"name":"business-automation-task-orchestrator"}}'
+        kubectl patch deployment business-automation-green-ai-ml-engine -n business-automation -p '{"metadata":{"name":"business-automation-ai-ml-engine"}}'
+        kubectl patch deployment business-automation-green-frontend -n business-automation -p '{"metadata":{"name":"business-automation-frontend"}}'
+
+    - name: Post-deployment verification
+      run: |
+        export KUBECONFIG=kubeconfig
+        
+        # Run comprehensive health checks
+        ./scripts/deployment-verification.sh production
+        
+        # Run performance tests
+        ./scripts/performance-tests.sh production
+
+  # Rollback capability
+  rollback:
+    name: Rollback
+    runs-on: ubuntu-latest
+    if: failure() && (github.ref == 'refs/heads/main' || github.event_name == 'release')
+    environment:
+      name: production
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > kubeconfig
+        export KUBECONFIG=kubeconfig
+
+    - name: Rollback deployment
+      run: |
+        export KUBECONFIG=kubeconfig
+        
+        # Rollback to previous version
+        kubectl rollout undo deployment/business-automation-api-gateway -n business-automation
+        kubectl rollout undo deployment/business-automation-task-orchestrator -n business-automation
+        kubectl rollout undo deployment/business-automation-ai-ml-engine -n business-automation
+        kubectl rollout undo deployment/business-automation-frontend -n business-automation
+        
+        # Wait for rollback to complete
+        kubectl rollout status deployment/business-automation-api-gateway -n business-automation --timeout=300s
+        kubectl rollout status deployment/business-automation-task-orchestrator -n business-automation --timeout=300s
+        kubectl rollout status deployment/business-automation-ai-ml-engine -n business-automation --timeout=300s
+        kubectl rollout status deployment/business-automation-frontend -n business-automation --timeout=300s
+        
+        # Verify rollback
+        ./scripts/deployment-verification.sh production

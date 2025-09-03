@@ -1,0 +1,59 @@
+{
+  "mcpServers": {
+    "business-automation-docs": {
+      "command": "uvx",
+      "args": ["mcp-server-docs@latest"],
+      "env": {
+        "DOCS_PATH": "./docs",
+        "FASTMCP_LOG_LEVEL": "INFO"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "search_documentation",
+        "get_document_content",
+        "list_documents"
+      ]
+    },
+    "code-analysis": {
+      "command": "uvx", 
+      "args": ["mcp-code-analyzer@latest"],
+      "env": {
+        "SOURCE_PATH": "./services/src",
+        "ANALYSIS_DEPTH": "2",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "analyze_code_structure",
+        "get_function_signatures",
+        "find_dependencies"
+      ]
+    },
+    "testing-assistant": {
+      "command": "uvx",
+      "args": ["mcp-testing-tools@latest"], 
+      "env": {
+        "TEST_FRAMEWORK": "jest",
+        "TEST_PATH": "./testing",
+        "FASTMCP_LOG_LEVEL": "WARN"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "run_test_suite",
+        "generate_test_report",
+        "analyze_coverage"
+      ]
+    },
+    "database-tools": {
+      "command": "uvx",
+      "args": ["mcp-mongodb-tools@latest"],
+      "env": {
+        "MONGODB_URI": "mongodb://localhost:27017/business-automation",
+        "COLLECTION_PREFIX": "dev_",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "disabled": true,
+      "autoApprove": []
+    }
+  }
+}

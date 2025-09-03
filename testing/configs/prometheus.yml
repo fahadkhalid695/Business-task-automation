@@ -1,0 +1,46 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['test-api-gateway:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'task-orchestrator'
+    static_configs:
+      - targets: ['test-task-orchestrator:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'ai-ml-engine'
+    static_configs:
+      - targets: ['test-ai-ml-engine:3002']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['test-mongodb:27017']
+    scrape_interval: 30s
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['test-redis:6379']
+    scrape_interval: 30s
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['test-nginx:80']
+    metrics_path: '/nginx_status'
+    scrape_interval: 15s

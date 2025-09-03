@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:5.0
+    container_name: business-automation-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: business-automation
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - business-automation-network
+
+  # Redis Cache
+  redis:
+    image: redis:6.2-alpine
+    container_name: business-automation-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - business-automation-network
+
+  # Backend API Services
+  api-gateway:
+    build:
+      context: ./services
+      dockerfile: Dockerfile
+    container_name: business-automation-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/business-automation?authSource=admin
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./services/logs:/app/logs
+    networks:
+      - business-automation-network
+
+  # Frontend React Application
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: business-automation-frontend
+    restart: unless-stopped
+    environment:
+      REACT_APP_API_URL: http://localhost:3000
+    ports:
+      - "3001:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - business-automation-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  business-automation-network:
+    driver: bridge

@@ -1,0 +1,128 @@
+# Production Environment Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: business-automation-config-production
+  namespace: business-automation
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "warn"
+  API_GATEWAY_PORT: "3000"
+  TASK_ORCHESTRATOR_PORT: "3001"
+  AI_ML_ENGINE_PORT: "3002"
+  MAX_CONCURRENT_TASKS: "200"
+  CACHE_TTL: "1800"
+  SESSION_TIMEOUT: "14400"
+  RATE_LIMIT_WINDOW: "60000"
+  RATE_LIMIT_MAX: "200"
+  CORS_ORIGIN: "https://business-automation.example.com"
+  ENABLE_SWAGGER: "false"
+  ENABLE_DEBUG_ROUTES: "false"
+  DATABASE_POOL_SIZE: "20"
+  REDIS_POOL_SIZE: "20"
+  METRICS_ENABLED: "true"
+  TRACING_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+  BACKUP_ENABLED: "true"
+  BACKUP_SCHEDULE: "0 2 * * *"
+  AUDIT_LOGGING: "true"
+  SECURITY_HEADERS: "true"
+  COMPRESSION_ENABLED: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: business-automation-secrets-production
+  namespace: business-automation
+type: Opaque
+stringData:
+  # These MUST be set via external secret management (AWS Secrets Manager, HashiCorp Vault, etc.)
+  MONGODB_URI: "mongodb://admin:CHANGE_ME@docdb-cluster.production.amazonaws.com:27017/business-automation?ssl=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+  REDIS_URL: "rediss://:CHANGE_ME@redis-cluster.production.amazonaws.com:6379"
+  JWT_SECRET: "CHANGE_ME_STRONG_JWT_SECRET"
+  JWT_EXPIRES_IN: "8h"
+  OPENAI_API_KEY: "CHANGE_ME"
+  ENCRYPTION_KEY: "CHANGE_ME_32_CHAR_ENCRYPTION_KEY"
+  WEBHOOK_SECRET: "CHANGE_ME_WEBHOOK_SECRET"
+  SMTP_HOST: "smtp.production.example.com"
+  SMTP_PORT: "587"
+  SMTP_USER: "noreply@business-automation.example.com"
+  SMTP_PASS: "CHANGE_ME"
+  AWS_ACCESS_KEY_ID: "CHANGE_ME"
+  AWS_SECRET_ACCESS_KEY: "CHANGE_ME"
+  GOOGLE_CLIENT_ID: "CHANGE_ME"
+  GOOGLE_CLIENT_SECRET: "CHANGE_ME"
+  SENTRY_DSN: "CHANGE_ME"
+  DATADOG_API_KEY: "CHANGE_ME"
+---
+# Production-specific resource limits (high)
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: business-automation-limits-production
+  namespace: business-automation
+spec:
+  limits:
+  - default:
+      cpu: "2"
+      memory: "4Gi"
+    defaultRequest:
+      cpu: "500m"
+      memory: "512Mi"
+    type: Container
+  - default:
+      storage: "100Gi"
+    type: PersistentVolumeClaim
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: business-automation-quota-production
+  namespace: business-automation
+spec:
+  hard:
+    requests.cpu: "50"
+    requests.memory: 100Gi
+    limits.cpu: "100"
+    limits.memory: 200Gi
+    persistentvolumeclaims: "20"
+    services: "30"
+    secrets: "30"
+    configmaps: "30"
+---
+# Production-specific Pod Disruption Budgets
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: business-automation-api-gateway-pdb
+  namespace: business-automation
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: business-automation
+      component: api-gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: business-automation-task-orchestrator-pdb
+  namespace: business-automation
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: business-automation
+      component: task-orchestrator
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: business-automation-ai-ml-engine-pdb
+  namespace: business-automation
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: business-automation
+      component: ai-ml-engine

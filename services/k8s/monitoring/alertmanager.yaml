@@ -1,0 +1,255 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'smtp.example.com:587'
+      smtp_from: 'alerts@business-automation.example.com'
+      smtp_auth_username: 'alerts@business-automation.example.com'
+      smtp_auth_password: 'CHANGE_ME'
+      
+    templates:
+      - '/etc/alertmanager/templates/*.tmpl'
+
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 1h
+      receiver: 'default-receiver'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'critical-alerts'
+        group_wait: 5s
+        repeat_interval: 30m
+      - match:
+          severity: warning
+        receiver: 'warning-alerts'
+        repeat_interval: 2h
+      - match:
+          alertname: ServiceDown
+        receiver: 'service-down-alerts'
+        group_wait: 0s
+        repeat_interval: 15m
+
+    receivers:
+    - name: 'default-receiver'
+      email_configs:
+      - to: 'devops@business-automation.example.com'
+        subject: '[Business Automation] Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Labels: {{ range .Labels.SortedPairs }}{{ .Name }}={{ .Value }} {{ end }}
+          {{ end }}
+
+    - name: 'critical-alerts'
+      email_configs:
+      - to: 'oncall@business-automation.example.com'
+        subject: '[CRITICAL] Business Automation Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          CRITICAL ALERT TRIGGERED
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Service: {{ .Labels.kubernetes_name }}
+          Namespace: {{ .Labels.kubernetes_namespace }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+      slack_configs:
+      - api_url: 'CHANGE_ME_SLACK_WEBHOOK_URL'
+        channel: '#alerts-critical'
+        title: 'Critical Alert: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Service:* {{ .Labels.kubernetes_name }}
+          *Severity:* {{ .Labels.severity }}
+          {{ end }}
+
+    - name: 'warning-alerts'
+      email_configs:
+      - to: 'devops@business-automation.example.com'
+        subject: '[WARNING] Business Automation Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          WARNING ALERT TRIGGERED
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.kubernetes_name }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+
+    - name: 'service-down-alerts'
+      email_configs:
+      - to: 'oncall@business-automation.example.com'
+        subject: '[SERVICE DOWN] {{ .GroupLabels.alertname }}'
+        body: |
+          SERVICE DOWN ALERT
+          
+          {{ range .Alerts }}
+          Service: {{ .Labels.kubernetes_name }}
+          Namespace: {{ .Labels.kubernetes_namespace }}
+          Description: {{ .Annotations.description }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+      slack_configs:
+      - api_url: 'CHANGE_ME_SLACK_WEBHOOK_URL'
+        channel: '#alerts-critical'
+        title: 'Service Down: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Service Down:* {{ .Labels.kubernetes_name }}
+          *Namespace:* {{ .Labels.kubernetes_namespace }}
+          *Time:* {{ .StartsAt }}
+          {{ end }}
+
+    inhibit_rules:
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['alertname', 'cluster', 'service']
+
+  alert-templates.tmpl: |
+    {{ define "slack.default.title" }}
+    [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.SortedPairs.Values | join " " }} {{ if gt (len .GroupLabels) 0 }}({{ range .GroupLabels.SortedPairs }}{{ .Name }}={{ .Value }}{{ end }}){{ end }}
+    {{ end }}
+
+    {{ define "slack.default.text" }}
+    {{ range .Alerts }}
+    *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+    *Description:* {{ .Annotations.description }}
+    *Details:*
+      {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+      {{ end }}
+    {{ end }}
+    {{ end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:v0.26.0
+        args:
+          - '--config.file=/etc/alertmanager/alertmanager.yml'
+          - '--storage.path=/alertmanager'
+          - '--web.external-url=https://alertmanager.business-automation.example.com'
+          - '--cluster.listen-address=0.0.0.0:9094'
+        ports:
+        - containerPort: 9093
+          name: web
+        - containerPort: 9094
+          name: cluster
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: alertmanager-config
+          mountPath: /etc/alertmanager
+        - name: alertmanager-storage
+          mountPath: /alertmanager
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9093
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9093
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+      volumes:
+      - name: alertmanager-config
+        configMap:
+          name: alertmanager-config
+      - name: alertmanager-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  selector:
+    app: alertmanager
+  type: ClusterIP
+  ports:
+  - port: 9093
+    targetPort: 9093
+    name: web
+  - port: 9094
+    targetPort: 9094
+    name: cluster
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager-ingress
+  namespace: monitoring
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: alertmanager-auth
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - AlertManager'
+spec:
+  tls:
+  - hosts:
+    - alertmanager.business-automation.example.com
+    secretName: alertmanager-tls
+  rules:
+  - host: alertmanager.business-automation.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: alertmanager
+            port:
+              number: 9093
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-auth
+  namespace: monitoring
+type: Opaque
+stringData:
+  auth: |
+    admin:$2y$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W  # admin:admin123 (change in production)

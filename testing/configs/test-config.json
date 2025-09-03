@@ -1,0 +1,62 @@
+{
+  "environments": {
+    "development": {
+      "apiUrl": "http://localhost:3000/api/v1",
+      "webUrl": "http://localhost:3000",
+      "database": "mongodb://localhost:27017/business-automation-test",
+      "redis": "redis://localhost:6379/1"
+    },
+    "staging": {
+      "apiUrl": "https://staging-api.business-automation.com/api/v1",
+      "webUrl": "https://staging.business-automation.com",
+      "database": "${STAGING_DB_URL}",
+      "redis": "${STAGING_REDIS_URL}"
+    },
+    "production": {
+      "apiUrl": "https://api.business-automation.com/api/v1",
+      "webUrl": "https://business-automation.com",
+      "database": "${PROD_DB_URL}",
+      "redis": "${PROD_REDIS_URL}"
+    }
+  },
+  "testData": {
+    "users": {
+      "admin": {
+        "email": "admin@test.com",
+        "password": "TestAdmin123!",
+        "role": "admin"
+      },
+      "manager": {
+        "email": "manager@test.com",
+        "password": "TestManager123!",
+        "role": "manager"
+      },
+      "user": {
+        "email": "user@test.com",
+        "password": "TestUser123!",
+        "role": "user"
+      }
+    },
+    "workflows": {
+      "emailProcessing": "email-processing-workflow",
+      "dataAnalysis": "data-analysis-workflow",
+      "documentGeneration": "document-generation-workflow"
+    }
+  },
+  "thresholds": {
+    "performance": {
+      "responseTime": 3000,
+      "throughput": 100,
+      "errorRate": 0.01
+    },
+    "security": {
+      "vulnerabilityScore": 7.0,
+      "complianceScore": 0.95
+    },
+    "dataQuality": {
+      "accuracy": 0.95,
+      "completeness": 0.98,
+      "consistency": 0.97
+    }
+  }
+}

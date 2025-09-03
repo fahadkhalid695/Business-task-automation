@@ -1,0 +1,209 @@
+{
+  "monitoring": {
+    "metricsRetention": 30,
+    "alertRetention": 90,
+    "collectionInterval": 60,
+    "healthCheckInterval": 30,
+    "anomalyDetectionEnabled": true,
+    "costTrackingEnabled": true,
+    "userAnalyticsEnabled": true
+  },
+  "thresholds": {
+    "system": {
+      "cpu": {
+        "warning": 80,
+        "critical": 90
+      },
+      "memory": {
+        "warning": 85,
+        "critical": 95
+      },
+      "disk": {
+        "warning": 90,
+        "critical": 95
+      }
+    },
+    "performance": {
+      "responseTime": {
+        "warning": 500,
+        "critical": 1000
+      },
+      "errorRate": {
+        "warning": 2,
+        "critical": 5
+      },
+      "throughput": {
+        "minimum": 100
+      }
+    },
+    "business": {
+      "taskCompletionRate": {
+        "target": 95,
+        "warning": 90,
+        "critical": 85
+      },
+      "userSatisfaction": {
+        "target": 4.5,
+        "warning": 4.0,
+        "critical": 3.5
+      },
+      "workflowEfficiency": {
+        "target": 85,
+        "warning": 80,
+        "critical": 75
+      }
+    }
+  },
+  "alerts": {
+    "escalationRules": [
+      {
+        "name": "Critical Alert Escalation",
+        "severity": "critical",
+        "levels": [
+          {
+            "level": 1,
+            "delay": 5,
+            "recipients": ["oncall@company.com"],
+            "channels": ["email", "sms"],
+            "actions": ["page_oncall"]
+          },
+          {
+            "level": 2,
+            "delay": 15,
+            "recipients": ["manager@company.com"],
+            "channels": ["email", "slack"],
+            "actions": ["notify_manager"]
+          },
+          {
+            "level": 3,
+            "delay": 30,
+            "recipients": ["director@company.com"],
+            "channels": ["email", "phone"],
+            "actions": ["escalate_to_director"]
+          }
+        ]
+      },
+      {
+        "name": "High Alert Escalation",
+        "severity": "high",
+        "levels": [
+          {
+            "level": 1,
+            "delay": 15,
+            "recipients": ["team@company.com"],
+            "channels": ["email", "slack"],
+            "actions": ["notify_team"]
+          },
+          {
+            "level": 2,
+            "delay": 60,
+            "recipients": ["manager@company.com"],
+            "channels": ["email"],
+            "actions": ["notify_manager"]
+          }
+        ]
+      }
+    ],
+    "notifications": {
+      "email": {
+        "enabled": true,
+        "recipients": ["admin@company.com", "ops@company.com"]
+      },
+      "slack": {
+        "enabled": true,
+        "webhookUrl": "${SLACK_WEBHOOK_URL}",
+        "channel": "#alerts"
+      },
+      "sms": {
+        "enabled": true,
+        "provider": "twilio",
+        "recipients": ["+1234567890"]
+      }
+    }
+  },
+  "dashboards": {
+    "default": [
+      {
+        "name": "System Overview",
+        "widgets": [
+          {
+            "type": "metric",
+            "title": "System Health Score",
+            "query": "health score",
+            "position": { "x": 0, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "type": "chart",
+            "title": "CPU Usage Trend",
+            "query": "metrics where name = system.cpu.usage time_range(24h)",
+            "position": { "x": 3, "y": 0, "width": 6, "height": 4 }
+          },
+          {
+            "type": "alert",
+            "title": "Active Alerts",
+            "query": "alerts where status = active",
+            "position": { "x": 9, "y": 0, "width": 3, "height": 6 }
+          }
+        ]
+      },
+      {
+        "name": "Business Metrics",
+        "widgets": [
+          {
+            "type": "metric",
+            "title": "Task Completion Rate",
+            "query": "business where name = task_completion_rate",
+            "position": { "x": 0, "y": 0, "width": 4, "height": 2 }
+          },
+          {
+            "type": "metric",
+            "title": "User Satisfaction",
+            "query": "business where name = user_satisfaction",
+            "position": { "x": 4, "y": 0, "width": 4, "height": 2 }
+          },
+          {
+            "type": "chart",
+            "title": "Workflow Efficiency Trend",
+            "query": "business where category = efficiency time_range(7d)",
+            "position": { "x": 0, "y": 2, "width": 8, "height": 4 }
+          }
+        ]
+      }
+    ]
+  },
+  "analytics": {
+    "anomalyDetection": {
+      "enabled": true,
+      "sensitivity": 2.0,
+      "minDataPoints": 10,
+      "algorithms": ["statistical", "isolation_forest"]
+    },
+    "capacityPlanning": {
+      "enabled": true,
+      "predictionHorizon": 30,
+      "confidenceThreshold": 0.8
+    },
+    "userBehavior": {
+      "enabled": true,
+      "sessionTimeout": 1800,
+      "trackingEnabled": true
+    }
+  },
+  "reporting": {
+    "systemReport": {
+      "enabled": true,
+      "schedule": "0 8 * * 1",
+      "recipients": ["management@company.com"]
+    },
+    "performanceReport": {
+      "enabled": true,
+      "schedule": "0 9 * * *",
+      "recipients": ["ops@company.com"]
+    },
+    "businessReport": {
+      "enabled": true,
+      "schedule": "0 10 1 * *",
+      "recipients": ["business@company.com"]
+    }
+  }
+}
