@@ -185,11 +185,13 @@ export class RedisCache {
     }
   }
 
-  async size(): Promise<number> {
-    try {
-      const keys = await this.keys();
-      return keys.length;
-    } catch (error) {
-      logger.error('Failed to get cache size', error);
-        }
+
+async size(): Promise<number> {
+  try {
+    const keys = await this.keys();
+    return keys.length;
+  } catch (error) {
+    logger.error('Failed to get cache size', error);
+    return 0;  // Returning a default value on error (optional)
   }
+}
