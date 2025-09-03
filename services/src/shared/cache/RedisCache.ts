@@ -191,4 +191,5 @@ export class RedisCache {
       return keys.length;
     } catch (error) {
       logger.error('Failed to get cache size', error);
-     
+        }
+  }
