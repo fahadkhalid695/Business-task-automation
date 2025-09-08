@@ -5,9 +5,9 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { SnackbarProvider } from 'notistack';
 import { HelmetProvider } from 'react-helmet-async';
 
-import { ThemeContextProvider } from './contexts/ThemeContext';
-import { AuthProvider } from './contexts/AuthContext';
-import { SocketProvider } from './contexts/SocketContext';
+import { ThemeContextProvider } from './contexts/ThemeContext.tsx';
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import { SocketProvider } from './contexts/SocketContext.tsx';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Layout } from './components/layout/Layout';
 
