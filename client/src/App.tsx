@@ -8,17 +8,17 @@ import { HelmetProvider } from 'react-helmet-async';
 import { ThemeContextProvider } from './contexts/ThemeContext.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { SocketProvider } from './contexts/SocketContext.tsx';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { Layout } from './components/layout/Layout';
+import { ProtectedRoute } from './components/auth/ProtectedRoute.tsx';
+import { Layout } from './components/layout/Layout.tsx';
 
 // Pages
-import { LoginPage } from './pages/auth/LoginPage';
-import { DashboardPage } from './pages/dashboard/DashboardPage';
-import { TasksPage } from './pages/tasks/TasksPage';
-import { WorkflowsPage } from './pages/workflows/WorkflowsPage';
-import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
-import { IntegrationsPage } from './pages/integrations/IntegrationsPage';
-import { SettingsPage } from './pages/settings/SettingsPage';
+import { LoginPage } from './pages/auth/LoginPage.tsx';
+import { DashboardPage } from './pages/dashboard/DashboardPage.tsx';
+import { TasksPage } from './pages/tasks/TasksPage.tsx';
+import { WorkflowsPage } from './pages/workflows/WorkflowsPage.tsx';
+import { AnalyticsPage } from './pages/analytics/AnalyticsPage.tsx';
+import { IntegrationsPage } from './pages/integrations/IntegrationsPage.tsx';
+import { SettingsPage } from './pages/settings/SettingsPage.tsx';
 import { NotFoundPage } from './pages/NotFoundPage.tsx';
 
 // Create a client
