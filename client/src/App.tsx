@@ -19,7 +19,7 @@ import { WorkflowsPage } from './pages/workflows/WorkflowsPage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
 import { IntegrationsPage } from './pages/integrations/IntegrationsPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
-import { NotFoundPage } from './pages/NotFoundPage';
+import { NotFoundPage } from './pages/NotFoundPage.tsx';
 
 // Create a client
 const queryClient = new QueryClient({
