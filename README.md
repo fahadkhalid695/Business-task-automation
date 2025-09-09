@@ -431,7 +431,7 @@ business-automation-platform/
 | 📚 **Documentation** | ✅ Complete | 25+ files | User guides, API docs, tutorials |
 | 🚀 **DevOps & Deployment** | ✅ Complete | 30+ files | Docker, Kubernetes, CI/CD |
 
-## �️ Teclhnology Stack
+## �️ Technology Stack
 
 <table>
 <tr>
