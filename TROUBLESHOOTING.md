@@ -107,7 +107,32 @@ import { Extension, Sync, Star } from '@mui/icons-material';
 - `CloudSync` → `Sync` or `CloudDownload`
 - `AutoAwesome` → `Star` or `Lightbulb`
 
-#### 6. React build fails
+#### 6. AJV module resolution errors
+
+**Problem**: `Cannot find module 'ajv/dist/compile/codegen'` or similar AJV-related errors.
+
+**Error**: `Error: Cannot find module 'ajv/dist/compile/codegen'`
+
+**Solution**:
+```bash
+# Automated AJV fix (recommended)
+npm run fix:ajv
+
+# Or manual fix:
+npm cache clean --force
+rm -rf node_modules package-lock.json
+rm -rf client/node_modules client/package-lock.json
+npm install --legacy-peer-deps
+cd client && npm install ajv@^8.12.0 --legacy-peer-deps
+cd client && npm install --legacy-peer-deps
+```
+
+**Root Cause**: AJV version conflicts in the dependency tree, often caused by:
+- Multiple versions of AJV being installed
+- Peer dependency conflicts with build tools
+- Cached dependency resolution issues
+
+#### 7. React build fails
 
 **Problem**: Various React/build tool issues.
 
@@ -150,6 +175,9 @@ import { Extension, Sync, Star } from '@mui/icons-material';
 ```bash
 # Fix dependency conflicts (recommended first step)
 npm run fix:deps
+
+# Fix AJV module resolution issues
+npm run fix:ajv
 
 # Fix TypeScript import extensions
 npm run fix:imports

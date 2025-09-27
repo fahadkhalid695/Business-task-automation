@@ -141,6 +141,20 @@ try {
   console.log('⚠️  Could not check icons:', error.message);
 }
 
+// Check for AJV issues
+console.log('\n🔍 Checking for AJV dependency issues...');
+try {
+  const clientPath = path.join(process.cwd(), 'client');
+  if (fs.existsSync(clientPath)) {
+    // Try to require ajv to see if it's properly installed
+    execSync('cd client && node -e "require(\'ajv\')"', { stdio: 'pipe' });
+    console.log('✅ AJV module resolves correctly');
+  }
+} catch (error) {
+  console.log('❌ AJV module resolution issue detected');
+  console.log('   Run: npm run fix:ajv');
+}
+
 // Check package.json versions
 console.log('\n📦 Checking package versions...');
 try {
