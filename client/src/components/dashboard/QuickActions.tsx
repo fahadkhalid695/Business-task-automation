@@ -16,7 +16,7 @@ import {
   Upload as UploadIcon,
   Settings as SettingsIcon,
   Analytics as AnalyticsIcon,
-  Integration as IntegrationIcon,
+  Extension as IntegrationIcon,
 } from '@mui/icons-material';
 
 const quickActions = [

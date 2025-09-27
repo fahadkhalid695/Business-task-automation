@@ -41,7 +41,7 @@ import {
   Palette as PaletteIcon,
   Language as LanguageIcon,
   Storage as StorageIcon,
-  CloudSync as SyncIcon,
+  Sync as SyncIcon,
 } from '@mui/icons-material';
 
 import { useAuth } from '../../contexts/AuthContext';

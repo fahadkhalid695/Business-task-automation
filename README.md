@@ -12,7 +12,7 @@
 [![Lines of Code](https://img.shields.io/badge/Lines_of_Code-80K+-orange.svg)](#)
 [![Documentation](https://img.shields.io/badge/Documentation-25_files-purple.svg)](#)
 
-[🎯 Features](#-key-features) • [🏗️ Architecture](#️-architecture) • [🚀 Quick Start](#-quick-start) • [📊 Stats](#-project-statistics) • [📚 Documentation](#-documentation)
+[🎯 Features](#-key-features) • [🏗️ Architecture](#️-architecture) • [🚀 Quick Start](#-quick-start) • [🔧 Troubleshooting](#-troubleshooting) • [📊 Stats](#-project-statistics) • [📚 Documentation](#-documentation)
 
 </div>
 
@@ -304,6 +304,34 @@ docker-compose up -d
 - `docker-compose.yml` - Local development environment
 - `testing/` - Comprehensive test suite
 - `docs/` - Complete documentation
+
+---
+
+## 🔧 Troubleshooting
+
+Having issues with installation or build? Check our comprehensive troubleshooting guide:
+
+### 🚨 Common Issues
+
+- **npm install fails**: Run `npm run clean:install` to clean and reinstall all dependencies
+- **Build errors**: Run `npm run verify:build` to diagnose build issues  
+- **Module resolution errors**: Check import paths and ensure all files exist
+- **TypeScript errors**: Verify type definitions and tsconfig.json configuration
+
+### 🛠️ Quick Fixes
+
+```bash
+# Clean install all dependencies
+npm run clean:install
+
+# Verify build setup
+npm run verify:build
+
+# Install dependencies for all packages
+npm run install:all
+```
+
+📖 **For detailed troubleshooting steps, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
 ---
 

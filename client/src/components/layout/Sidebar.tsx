@@ -17,9 +17,9 @@ import {
   Assignment as TasksIcon,
   AccountTree as WorkflowsIcon,
   Analytics as AnalyticsIcon,
-  Integration as IntegrationsIcon,
+  Extension as IntegrationsIcon,
   Settings as SettingsIcon,
-  AutoAwesome as AIIcon,
+  Star as AIIcon,
 } from '@mui/icons-material';
 
 import { useAuth } from '../../contexts/AuthContext';

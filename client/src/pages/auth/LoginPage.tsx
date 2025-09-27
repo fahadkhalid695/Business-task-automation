@@ -13,7 +13,7 @@ import {
   Container,
   Avatar,
 } from '@mui/material';
-import { AutoAwesome as AIIcon } from '@mui/icons-material';
+import { Star as AIIcon } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const LoginPage: React.FC = () => {

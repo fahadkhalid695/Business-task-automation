@@ -16,7 +16,7 @@ import {
 import {
   Email as EmailIcon,
   Assignment as TaskIcon,
-  AutoAwesome as AIIcon,
+  Star as AIIcon,
   Error as ErrorIcon,
   CheckCircle as SuccessIcon,
   Schedule as ScheduleIcon,
