@@ -184,20 +184,43 @@ export class CapacityPlanner {
       { name: 'network', value: data.network, thresholds: this.thresholds.network }
     ];
 
-    for (const check of checks) {
-      if (check.value >= check.thresholds.critical) {
-        logger.security(`Critical ${check.name} usage detected`, 'critical', {
-          resource: check.name,
-          usage: check.value,
-          threshold: check.thresholds.critical
-        });
-        
-        metrics.incrementCounter('capacity_threshold_violations_total', 1, {
-          resource: check.name,
-          severity: 'critical'
-        });
-      } else if (check.value >= check.thresholds.warning) {
-        logger.warn(`High ${check.name} usage detected`, {
-          resource: check.name,
-          usage: check.value,
-          threshold: c
+
+for (const check of checks) {
+  if (check.value >= check.thresholds.critical) {
+    // Critical usage detected
+    logger.security(`Critical ${check.name} usage detected`, 'critical', {
+      resource: check.name,
+      usage: check.value,
+      threshold: check.thresholds.critical
+    });
+
+    // Increment the counter for critical violations
+    metrics.incrementCounter('capacity_threshold_violations_total', 1, {
+      resource: check.name,
+      severity: 'critical'
+    });
+  } else if (check.value >= check.thresholds.warning) {
+    // High usage (warning) detected
+    logger.warn(`High ${check.name} usage detected`, {
+      resource: check.name,
+      usage: check.value,
+      threshold: check.thresholds.warning
+    });
+
+    // Increment the counter for warning violations
+    metrics.incrementCounter('capacity_threshold_violations_total', 1, {
+      resource: check.name,
+      severity: 'warning'
+    });
+  } else {
+    // Usage is within safe limits
+    logger.info(`${check.name} usage is normal`, {
+      resource: check.name,
+      usage: check.value,
+      threshold: check.thresholds.warning
+    });
+  }
+}  // This closing brace is necessary to close the 'for' loop
+
+  }
+}
