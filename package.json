@@ -7,6 +7,8 @@
     "install:all": "node scripts/install-dependencies.js",
     "clean:install": "node scripts/clean-install.js",
     "verify:build": "node scripts/verify-build.js",
+    "fix:deps": "node scripts/fix-dependencies.js",
+    "fix:imports": "node scripts/fix-imports.js",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:client\"",
     "dev:api": "cd services && npm run dev",
     "dev:client": "cd client && npm start",

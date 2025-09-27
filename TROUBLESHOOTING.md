@@ -4,21 +4,34 @@
 
 ### Common Problems and Solutions
 
-#### 1. npm install fails with "No matching version found"
+#### 1. npm install fails with "No matching version found" or ESLint conflicts
 
-**Problem**: Dependencies with incorrect versions or non-existent packages.
+**Problem**: Dependencies with incorrect versions, peer dependency conflicts, or ESLint version mismatches.
 
 **Solution**:
 ```bash
-# Clean install all dependencies
-npm run clean:install
+# Fix dependency conflicts automatically
+npm run fix:deps
 
-# Or manually clean and install
+# Or manually clean and install with legacy peer deps
 rm -rf node_modules package-lock.json
 rm -rf client/node_modules client/package-lock.json
 rm -rf services/node_modules services/package-lock.json
-npm install
+npm install --legacy-peer-deps
+cd client && npm install --legacy-peer-deps
+cd ../services && npm install --legacy-peer-deps
 ```
+
+**Common ESLint Conflicts**:
+- Different ESLint versions across packages
+- TypeScript ESLint plugin version mismatches
+- Peer dependency conflicts with React Scripts
+
+**Fixed Versions**:
+- ESLint: `^8.57.1`
+- @typescript-eslint/eslint-plugin: `^6.21.0`
+- @typescript-eslint/parser: `^6.21.0`
+- TypeScript: `^5.3.2`
 
 #### 2. "Can't resolve './AuthContext'" error
 
@@ -41,7 +54,26 @@ npm install
 
 3. Ensure tsconfig.json exists in client directory
 
-#### 3. TypeScript compilation errors
+#### 3. TypeScript import path errors
+
+**Problem**: Import paths ending with `.tsx` or `.ts` extensions cause compilation errors.
+
+**Error**: `TS2691: An import path cannot end with a '.tsx' extension`
+
+**Solution**:
+```bash
+# Automatically fix all import extensions
+npm run fix:imports
+
+# Or manually fix imports by removing extensions:
+# ❌ Wrong
+import { Component } from './Component.tsx';
+
+# ✅ Correct  
+import { Component } from './Component';
+```
+
+#### 4. TypeScript compilation errors
 
 **Problem**: Type mismatches or missing type definitions.
 
@@ -56,7 +88,26 @@ npm install
    cd client && npm install @types/react @types/react-dom
    ```
 
-#### 4. React build fails
+#### 5. Material-UI icon import errors
+
+**Problem**: Icons like `Integration`, `CloudSync`, `AutoAwesome` don't exist in @mui/icons-material.
+
+**Solution**:
+Replace with valid Material-UI icons:
+```typescript
+// ❌ These don't exist
+import { Integration, CloudSync, AutoAwesome } from '@mui/icons-material';
+
+// ✅ Use these instead
+import { Extension, Sync, Star } from '@mui/icons-material';
+```
+
+**Common Replacements**:
+- `Integration` → `Extension` or `Link`
+- `CloudSync` → `Sync` or `CloudDownload`
+- `AutoAwesome` → `Star` or `Lightbulb`
+
+#### 6. React build fails
 
 **Problem**: Various React/build tool issues.
 
@@ -69,6 +120,11 @@ npm install
 2. Update React scripts:
    ```bash
    cd client && npm update react-scripts
+   ```
+
+3. Fix TypeScript compilation:
+   ```bash
+   cd client && npx tsc --noEmit
    ```
 
 ### Environment Setup
@@ -92,6 +148,12 @@ npm install
 ### Development Commands
 
 ```bash
+# Fix dependency conflicts (recommended first step)
+npm run fix:deps
+
+# Fix TypeScript import extensions
+npm run fix:imports
+
 # Install all dependencies
 npm run install:all
 

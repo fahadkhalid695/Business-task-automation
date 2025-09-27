@@ -57,6 +57,8 @@ try {
 }
 
 console.log('\n🔧 Attempting to identify build issues...');
+
+// Check TypeScript compilation
 try {
   console.log('Testing TypeScript compilation...');
   execSync('cd client && npx tsc --noEmit', { stdio: 'pipe' });
@@ -64,6 +66,108 @@ try {
 } catch (error) {
   console.log('❌ TypeScript compilation failed:');
   console.log(error.stdout?.toString() || error.message);
+}
+
+// Check for import extension issues
+console.log('\n📝 Checking for import extension issues...');
+let importIssues = false;
+
+try {
+  const clientSrcPath = path.join(process.cwd(), 'client', 'src');
+  if (fs.existsSync(clientSrcPath)) {
+    function checkImportsInDir(dir) {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+        
+        if (stat.isDirectory() && !file.startsWith('.')) {
+          checkImportsInDir(filePath);
+        } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
+          const content = fs.readFileSync(filePath, 'utf8');
+          const extensionPattern = /import.*from\s+['"][^'"]*\.(tsx?|jsx?)['"]/g;
+          let match;
+          while ((match = extensionPattern.exec(content)) !== null) {
+            console.log(`❌ Found import with extension in ${path.relative(process.cwd(), filePath)}: ${match[0]}`);
+            importIssues = true;
+          }
+        }
+      }
+    }
+    checkImportsInDir(clientSrcPath);
+  }
+  
+  if (!importIssues) {
+    console.log('✅ No import extension issues found');
+  }
+} catch (error) {
+  console.log('⚠️  Could not check imports:', error.message);
+}
+
+// Check for common problematic icons
+console.log('\n🎨 Checking for problematic Material-UI icons...');
+const problematicIcons = ['Integration', 'CloudSync', 'AutoAwesome'];
+let iconIssues = false;
+
+try {
+  const clientSrcPath = path.join(process.cwd(), 'client', 'src');
+  if (fs.existsSync(clientSrcPath)) {
+    function checkIconsInDir(dir) {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+        
+        if (stat.isDirectory() && !file.startsWith('.')) {
+          checkIconsInDir(filePath);
+        } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
+          const content = fs.readFileSync(filePath, 'utf8');
+          for (const icon of problematicIcons) {
+            if (content.includes(`${icon} as `) || content.includes(`import { ${icon}`)) {
+              console.log(`❌ Found problematic icon "${icon}" in ${path.relative(process.cwd(), filePath)}`);
+              iconIssues = true;
+            }
+          }
+        }
+      }
+    }
+    checkIconsInDir(clientSrcPath);
+  }
+  
+  if (!iconIssues) {
+    console.log('✅ No problematic icons found');
+  }
+} catch (error) {
+  console.log('⚠️  Could not check icons:', error.message);
+}
+
+// Check package.json versions
+console.log('\n📦 Checking package versions...');
+try {
+  const clientPkg = JSON.parse(fs.readFileSync('client/package.json', 'utf8'));
+  const servicesPkg = JSON.parse(fs.readFileSync('services/package.json', 'utf8'));
+  
+  // Check TypeScript versions
+  const clientTS = clientPkg.dependencies?.typescript || clientPkg.devDependencies?.typescript;
+  const servicesTS = servicesPkg.dependencies?.typescript || servicesPkg.devDependencies?.typescript;
+  
+  if (clientTS && servicesTS && clientTS !== servicesTS) {
+    console.log(`⚠️  TypeScript version mismatch: client(${clientTS}) vs services(${servicesTS})`);
+  } else {
+    console.log('✅ TypeScript versions consistent');
+  }
+  
+  // Check ESLint versions
+  const clientESLint = clientPkg.devDependencies?.eslint;
+  const servicesESLint = servicesPkg.devDependencies?.eslint;
+  
+  if (clientESLint && servicesESLint && clientESLint !== servicesESLint) {
+    console.log(`⚠️  ESLint version mismatch: client(${clientESLint}) vs services(${servicesESLint})`);
+  } else {
+    console.log('✅ ESLint versions consistent');
+  }
+} catch (error) {
+  console.log('⚠️  Could not check package versions:', error.message);
 }
 
 console.log('\n✨ Build verification completed!');
