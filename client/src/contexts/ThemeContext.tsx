@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { useAuth } from './AuthContext';
 
 interface ThemeContextType {
   isDarkMode: boolean;
@@ -194,27 +193,20 @@ const createAppTheme = (isDarkMode: boolean) => {
 };
 
 export const ThemeContextProvider: React.FC<ThemeContextProviderProps> = ({ children }) => {
-  const { user } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Initialize from localStorage or user preferences
+    // Initialize from localStorage
     const saved = localStorage.getItem('theme');
     if (saved) {
       return saved === 'dark';
     }
-    return user?.preferences?.theme === 'dark' || false;
+    // Default to light mode
+    return false;
   });
 
   useEffect(() => {
     // Update localStorage when theme changes
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
-
-  useEffect(() => {
-    // Update theme when user preferences change
-    if (user?.preferences?.theme) {
-      setIsDarkMode(user.preferences.theme === 'dark');
-    }
-  }, [user?.preferences?.theme]);
 
   const toggleTheme = () => {
     setIsDarkMode(prev => !prev);

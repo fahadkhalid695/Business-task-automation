@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuth } from './AuthContext';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -27,10 +26,14 @@ interface SocketProviderProps {
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { isAuthenticated, token } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated && token) {
+    // Initialize socket connection
+    // We'll connect to socket when user is authenticated
+    // For now, just provide the context without connection
+    const token = localStorage.getItem('token');
+    
+    if (token) {
       const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
         auth: {
           token,
@@ -52,14 +55,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       return () => {
         newSocket.close();
       };
-    } else {
-      if (socket) {
-        socket.close();
-        setSocket(null);
-        setIsConnected(false);
-      }
     }
-  }, [isAuthenticated, token]);
+  }, []);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
