@@ -6,9 +6,10 @@ const path = require('path');
 
 console.log('🚀 Comprehensive Build Issue Fix\n');
 console.log('This script will fix all common build issues:\n');
-console.log('  • Dependency conflicts');
-console.log('  • AJV module resolution');
 console.log('  • TypeScript import extensions');
+console.log('  • Form validation type mismatches');
+console.log('  • AJV module resolution');
+console.log('  • Dependency conflicts');
 console.log('  • ESLint version conflicts');
 console.log('  • Material-UI icon issues\n');
 
@@ -37,17 +38,22 @@ function runScript(scriptName) {
 console.log('1️⃣ Fixing TypeScript import extensions...');
 runScript('fix-imports');
 
-// Step 2: Fix AJV issues
-console.log('2️⃣ Fixing AJV dependency issues...');
+// Step 2: Fix form type issues
+console.log('2️⃣ Fixing form validation types...');
+runScript('fix-form-types');
+
+// Step 3: Fix AJV issues
+console.log('3️⃣ Fixing AJV dependency issues...');
 runScript('fix-ajv-issue');
 
-// Step 3: Verify the build
-console.log('3️⃣ Verifying build setup...');
+// Step 4: Verify the build
+console.log('4️⃣ Verifying build setup...');
 runScript('verify-build');
 
 console.log('🎉 Comprehensive fix completed!');
 console.log('\n📋 Summary:');
 console.log('  ✅ Import extensions fixed');
+console.log('  ✅ Form validation types fixed');
 console.log('  ✅ AJV dependencies resolved');
 console.log('  ✅ Build verification completed');
 console.log('\n🚀 Try running: npm run dev');

@@ -141,6 +141,46 @@ try {
   console.log('⚠️  Could not check icons:', error.message);
 }
 
+// Check for form type issues
+console.log('\n📝 Checking for form validation type issues...');
+try {
+  const clientSrcPath = path.join(process.cwd(), 'client', 'src');
+  if (fs.existsSync(clientSrcPath)) {
+    let formIssues = false;
+    
+    function checkFormTypesInDir(dir) {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        const stat = fs.statSync(filePath);
+        
+        if (stat.isDirectory() && !file.startsWith('.')) {
+          checkFormTypesInDir(filePath);
+        } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
+          const content = fs.readFileSync(filePath, 'utf8');
+          
+          // Check for potential form type issues
+          if (content.includes('yupResolver') && content.includes('yup.string()') && 
+              (content.includes('TaskType') || content.includes('Priority') || content.includes('enum'))) {
+            console.log(`⚠️  Potential form type issue in ${path.relative(process.cwd(), filePath)}`);
+            formIssues = true;
+          }
+        }
+      }
+    }
+    
+    checkFormTypesInDir(clientSrcPath);
+    
+    if (!formIssues) {
+      console.log('✅ No form validation type issues found');
+    } else {
+      console.log('   Run: npm run fix:forms');
+    }
+  }
+} catch (error) {
+  console.log('⚠️  Could not check form types:', error.message);
+}
+
 // Check for AJV issues
 console.log('\n🔍 Checking for AJV dependency issues...');
 try {

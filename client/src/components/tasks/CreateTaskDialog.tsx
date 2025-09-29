@@ -47,8 +47,8 @@ interface TaskFormData {
 const schema = yup.object({
   title: yup.string().required('Title is required').min(3, 'Title must be at least 3 characters'),
   description: yup.string().required('Description is required'),
-  type: yup.string().required('Task type is required'),
-  priority: yup.string().required('Priority is required'),
+  type: yup.mixed<TaskType>().oneOf(Object.values(TaskType)).required('Task type is required'),
+  priority: yup.mixed<Priority>().oneOf(Object.values(Priority)).required('Priority is required'),
   estimatedDuration: yup.number().positive('Duration must be positive').required('Estimated duration is required'),
   dueDate: yup.string().required('Due date is required'),
 });

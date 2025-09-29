@@ -11,6 +11,7 @@
     "fix:imports": "node scripts/fix-imports.js",
     "fix:ajv": "node scripts/fix-ajv-issue.js",
     "fix:all": "node scripts/fix-all-issues.js",
+    "fix:forms": "node scripts/fix-form-types.js",
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:client\"",
     "dev:api": "cd services && npm run dev",
     "dev:client": "cd client && npm start",

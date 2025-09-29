@@ -73,7 +73,28 @@ import { Component } from './Component.tsx';
 import { Component } from './Component';
 ```
 
-#### 4. TypeScript compilation errors
+#### 4. TypeScript form validation errors
+
+**Problem**: Yup resolver type mismatches with TypeScript interfaces.
+
+**Error**: `Type 'Resolver<...>' is not assignable to type 'Resolver<TaskFormData, any, TaskFormData>'`
+
+**Solution**:
+```bash
+# Automatically fix form type issues
+npm run fix:forms
+
+# Or manually fix by updating Yup schema:
+# ❌ Wrong
+type: yup.string().required('Task type is required'),
+
+# ✅ Correct
+type: yup.mixed<TaskType>().oneOf(Object.values(TaskType)).required('Task type is required'),
+```
+
+**Root Cause**: Yup schemas using `string()` validation for enum types instead of `mixed<EnumType>()`.
+
+#### 5. TypeScript compilation errors
 
 **Problem**: Type mismatches or missing type definitions.
 
@@ -88,7 +109,7 @@ import { Component } from './Component';
    cd client && npm install @types/react @types/react-dom
    ```
 
-#### 5. Material-UI icon import errors
+#### 6. Material-UI icon import errors
 
 **Problem**: Icons like `Integration`, `CloudSync`, `AutoAwesome` don't exist in @mui/icons-material.
 
@@ -107,7 +128,7 @@ import { Extension, Sync, Star } from '@mui/icons-material';
 - `CloudSync` → `Sync` or `CloudDownload`
 - `AutoAwesome` → `Star` or `Lightbulb`
 
-#### 6. AJV module resolution errors
+#### 7. AJV module resolution errors
 
 **Problem**: `Cannot find module 'ajv/dist/compile/codegen'` or similar AJV-related errors.
 
@@ -132,7 +153,7 @@ cd client && npm install --legacy-peer-deps
 - Peer dependency conflicts with build tools
 - Cached dependency resolution issues
 
-#### 7. React build fails
+#### 8. React build fails
 
 **Problem**: Various React/build tool issues.
 
@@ -181,6 +202,9 @@ npm run fix:ajv
 
 # Fix TypeScript import extensions
 npm run fix:imports
+
+# Fix form validation type issues
+npm run fix:forms
 
 # Install all dependencies
 npm run install:all
