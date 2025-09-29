@@ -172,7 +172,7 @@ router.post('/generate',
       .withMessage('Provider must be either "openai" or "grok"')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { prompt, options = {}, provider } = req.body;
       
