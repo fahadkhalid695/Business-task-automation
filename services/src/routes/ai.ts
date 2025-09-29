@@ -20,7 +20,7 @@ router.post('/generate-text',
       .withMessage('Options must be an object')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { prompt, options = {} } = req.body;
       
@@ -57,7 +57,7 @@ router.post('/analyze-text',
       .withMessage('Text must be a string between 1 and 5000 characters')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { text } = req.body;
       
@@ -97,7 +97,7 @@ router.post('/classify-text',
       .withMessage('Categories must be an array with at least 2 items')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { text, categories } = req.body;
       
@@ -135,7 +135,7 @@ router.post('/summarize',
       .withMessage('Text must be a string between 100 and 10000 characters')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { text } = req.body;
       
@@ -176,7 +176,7 @@ router.post('/translate',
       .withMessage('Target language must be specified')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { text, targetLanguage } = req.body;
       
@@ -214,7 +214,7 @@ router.post('/workflow-suggestions',
       .withMessage('Description must be a string between 10 and 1000 characters')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { description } = req.body;
       
@@ -250,7 +250,7 @@ router.post('/optimize-workflow',
       .withMessage('Workflow must be an object')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { workflow } = req.body;
       
@@ -286,7 +286,7 @@ router.post('/detect-anomalies',
       .withMessage('Data must be an array')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { data } = req.body;
       
@@ -322,7 +322,7 @@ router.post('/generate-insights',
       .withMessage('Data must be an object')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { data } = req.body;
       
