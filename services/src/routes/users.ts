@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { Router } from 'express';
 import { auth, requireRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -38,7 +39,7 @@ const users = [
 ];
 
 // Get current user profile
-router.get('/profile', auth, async (req, res) => {
+router.get('/profile', auth, async (req: Request, res: Response) => {
   try {
     const user = users.find(u => u.id === req.user?.id);
     
@@ -89,7 +90,7 @@ router.put('/profile',
       .withMessage('Language must be a supported language code')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const userIndex = users.findIndex(u => u.id === req.user?.id);
       
@@ -126,7 +127,7 @@ router.put('/profile',
 );
 
 // Get all users (admin only)
-router.get('/', auth, requireRole(['admin']), async (req, res) => {
+router.get('/', auth, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const allUsers = users.map(user => {
       const { ...userWithoutPassword } = user;
@@ -147,7 +148,7 @@ router.get('/', auth, requireRole(['admin']), async (req, res) => {
 });
 
 // Get user by ID (admin only)
-router.get('/:id', auth, requireRole(['admin']), async (req, res) => {
+router.get('/:id', auth, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = users.find(u => u.id === id);
@@ -184,7 +185,7 @@ router.put('/:id/role',
       .withMessage('Role must be either admin or user')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const { role } = req.body;
@@ -219,7 +220,7 @@ router.put('/:id/role',
 );
 
 // Delete user (admin only)
-router.delete('/:id', auth, requireRole(['admin']), async (req, res) => {
+router.delete('/:id', auth, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
