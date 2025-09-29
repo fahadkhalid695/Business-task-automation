@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { Router } from 'express';
 import { auth } from '../middleware/auth';
 
@@ -61,7 +62,7 @@ router.get('/dashboard', auth, async (req, res) => {
 });
 
 // Get task analytics
-router.get('/tasks', auth, async (req, res) => {
+router.get('/tasks', auth, async (req: Request, res: Response) => {
   try {
     const taskAnalytics = {
       byStatus: {
@@ -103,7 +104,7 @@ router.get('/tasks', auth, async (req, res) => {
 });
 
 // Get workflow analytics
-router.get('/workflows', auth, async (req, res) => {
+router.get('/workflows', auth, async (req: Request, res: Response) => {
   try {
     const workflowAnalytics = {
       byStatus: {
