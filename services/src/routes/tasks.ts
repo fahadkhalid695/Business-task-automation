@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { Router } from 'express';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -30,7 +31,7 @@ let tasks = [
 ];
 
 // Get all tasks
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req: Request, res: Response) => {
   try {
     const userTasks = tasks.filter(task => task.userId === req.user?.id);
     
@@ -48,7 +49,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get task by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const task = tasks.find(t => t.id === id && t.userId === req.user?.id);
@@ -92,7 +93,7 @@ router.post('/',
       .withMessage('Priority must be one of: low, medium, high, critical')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { title, description, priority = 'medium' } = req.body;
       
@@ -147,7 +148,7 @@ router.put('/:id',
       .withMessage('Priority must be one of: low, medium, high, critical')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const taskIndex = tasks.findIndex(t => t.id === id && t.userId === req.user?.id);
@@ -182,7 +183,7 @@ router.put('/:id',
 );
 
 // Delete task
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const taskIndex = tasks.findIndex(t => t.id === id && t.userId === req.user?.id);
