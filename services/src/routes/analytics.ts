@@ -5,7 +5,7 @@ import { auth } from '../middleware/auth';
 const router = Router();
 
 // Get analytics dashboard data
-router.get('/dashboard', auth, async (req, res) => {
+router.get('/dashboard', auth, async (req: Request, res: Response) => {
   try {
     // Mock analytics data
     const analyticsData = {
