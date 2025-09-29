@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { Router } from 'express';
+import { UserRole } from '../shared/types';
 import { auth, requireRole } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { body } from 'express-validator';
