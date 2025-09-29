@@ -94,7 +94,30 @@ type: yup.mixed<TaskType>().oneOf(Object.values(TaskType)).required('Task type i
 
 **Root Cause**: Yup schemas using `string()` validation for enum types instead of `mixed<EnumType>()`.
 
-#### 5. TypeScript compilation errors
+#### 5. TypeScript literal type errors
+
+**Problem**: String literals not matching union types (e.g., `trend: 'up'` vs `trend: "up" | "down"`).
+
+**Error**: `Type 'string' is not assignable to type '"up" | "down"'`
+
+**Solution**:
+```bash
+# Automatically fix literal type issues
+npm run fix:types
+
+# Or manually fix by adding 'as const':
+# ❌ Wrong
+trend: 'up',
+color: 'primary',
+
+# ✅ Correct
+trend: 'up' as const,
+color: 'primary' as const,
+```
+
+**Root Cause**: TypeScript infers string literals as `string` type instead of specific literal types.
+
+#### 6. TypeScript compilation errors
 
 **Problem**: Type mismatches or missing type definitions.
 
@@ -109,7 +132,7 @@ type: yup.mixed<TaskType>().oneOf(Object.values(TaskType)).required('Task type i
    cd client && npm install @types/react @types/react-dom
    ```
 
-#### 6. Material-UI icon import errors
+#### 7. Material-UI icon import errors
 
 **Problem**: Icons like `Integration`, `CloudSync`, `AutoAwesome` don't exist in @mui/icons-material.
 
@@ -128,7 +151,7 @@ import { Extension, Sync, Star } from '@mui/icons-material';
 - `CloudSync` → `Sync` or `CloudDownload`
 - `AutoAwesome` → `Star` or `Lightbulb`
 
-#### 7. AJV module resolution errors
+#### 8. AJV module resolution errors
 
 **Problem**: `Cannot find module 'ajv/dist/compile/codegen'` or similar AJV-related errors.
 
@@ -153,7 +176,7 @@ cd client && npm install --legacy-peer-deps
 - Peer dependency conflicts with build tools
 - Cached dependency resolution issues
 
-#### 8. React build fails
+#### 9. React build fails
 
 **Problem**: Various React/build tool issues.
 
@@ -206,6 +229,12 @@ npm run fix:imports
 # Fix form validation type issues
 npm run fix:forms
 
+# Fix TypeScript literal type issues
+npm run fix:types
+
+# Fix CI/CD pipeline issues
+npm run fix:ci
+
 # Install all dependencies
 npm run install:all
 
@@ -249,8 +278,53 @@ npm test
 3. Review this troubleshooting guide
 4. Check the project documentation in `/docs`
 
+## CI/CD Pipeline Issues
+
+### Common CI/CD Problems and Solutions
+
+#### 1. Pipeline fails with dependency errors
+
+**Problem**: CI/CD pipeline fails during `npm ci` or dependency installation.
+
+**Solution**:
+```bash
+# Fix CI/CD pipeline configuration
+npm run fix:ci
+
+# The fix will:
+# - Update workflow to use npm install --legacy-peer-deps
+# - Create missing Dockerfiles and scripts
+# - Add missing package.json scripts
+# - Create basic Kubernetes manifests
+```
+
+#### 2. Missing package-lock.json files
+
+**Problem**: Pipeline expects package-lock.json but files don't exist.
+
+**Solution**: The CI/CD workflow has been updated to use `package.json` for caching instead of lock files.
+
+#### 3. Missing Docker build files
+
+**Problem**: Pipeline references Dockerfiles that don't exist.
+
+**Solution**: Run `npm run fix:ci` to create basic Dockerfile templates for all services.
+
+#### 4. Missing Kubernetes manifests
+
+**Problem**: Deployment steps reference missing k8s configuration files.
+
+**Solution**: The fix script creates basic Kubernetes manifests in `services/k8s/`.
+
+#### 5. Missing scripts in package.json
+
+**Problem**: Pipeline calls scripts that don't exist (like `type-check`, `cypress:run`).
+
+**Solution**: The fix script automatically adds missing scripts to package.json files.
+
 ### Performance Tips
 
-- Use `npm ci` instead of `npm install` in CI/CD environments
+- Use `npm ci` instead of `npm install` in CI/CD environments (when lock files exist)
 - Clear npm cache if experiencing persistent issues: `npm cache clean --force`
 - Use Node.js version manager (nvm) to ensure consistent Node.js version across environments
+- Use the fixed CI/CD workflow (`.github/workflows/ci-cd-fixed.yml`) for better reliability
