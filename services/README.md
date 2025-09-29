@@ -59,6 +59,12 @@ OPENAI_API_KEY=your-openai-api-key
 # Development mode with hot reload
 npm run dev
 
+# Development with debugging
+npm run dev:debug
+
+# Check development environment
+npm run dev:check
+
 # Production mode
 npm run build
 npm start
@@ -68,6 +74,18 @@ npm run start:dev
 ```
 
 The server will start on `http://localhost:3001`
+
+### Development Scripts
+
+- `npm run dev` - Start with hot reload
+- `npm run dev:debug` - Start with debugging (port 9229)
+- `npm run dev:check` - Check environment setup
+- `npm run build:watch` - Build with file watching
+- `npm run test:watch` - Run tests in watch mode
+- `npm run health` - Check server health
+- `npm run logs` - View application logs
+
+See [DEV_GUIDE.md](./DEV_GUIDE.md) for detailed development instructions.
 
 ## API Documentation
 
