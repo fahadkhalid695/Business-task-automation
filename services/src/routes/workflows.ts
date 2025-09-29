@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { Router } from 'express';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -38,7 +39,7 @@ let workflows = [
 ];
 
 // Get all workflows
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req: Request, res: Response) => {
   try {
     const userWorkflows = workflows.filter(workflow => workflow.userId === req.user?.id);
     
@@ -56,7 +57,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get workflow by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const workflow = workflows.find(w => w.id === id && w.userId === req.user?.id);
@@ -99,7 +100,7 @@ router.post('/',
       .withMessage('Steps must be an array with at least 1 step')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { name, description, steps } = req.body;
       
@@ -150,7 +151,7 @@ router.put('/:id',
       .withMessage('Status must be one of: draft, active, inactive, archived')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const workflowIndex = workflows.findIndex(w => w.id === id && w.userId === req.user?.id);
@@ -185,7 +186,7 @@ router.put('/:id',
 );
 
 // Delete workflow
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const workflowIndex = workflows.findIndex(w => w.id === id && w.userId === req.user?.id);
@@ -213,7 +214,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Execute workflow
-router.post('/:id/execute', auth, async (req, res) => {
+router.post('/:id/execute', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const workflow = workflows.find(w => w.id === id && w.userId === req.user?.id);
@@ -260,7 +261,7 @@ router.post('/:id/execute', auth, async (req, res) => {
 });
 
 // Get AI suggestions for workflow optimization
-router.post('/:id/optimize', auth, async (req, res) => {
+router.post('/:id/optimize', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const workflow = workflows.find(w => w.id === id && w.userId === req.user?.id);
