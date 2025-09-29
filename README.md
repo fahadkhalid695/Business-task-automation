@@ -267,28 +267,53 @@ Make sure you have the following installed:
 
 ### ⚡ Quick Setup
 
+#### Option 1: Automated Setup (Recommended)
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd business-automation-platform
+cd business-task-automation
 
-# 2. Install dependencies
-npm install
-cd services && npm install && cd ..
-cd client && npm install && cd ..
+# 2. Run the master setup script
+npm run setup
+
+# 3. Start development servers
+npm run dev
+```
+
+#### Option 2: Manual Setup
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd business-task-automation
+
+# 2. Install all dependencies
+npm run install:all
 
 # 3. Setup environment variables
 cp services/.env.example services/.env
-# Edit services/.env with your configuration (defaults work for local development)
+# Edit services/.env with your API keys (Grok/OpenAI)
 
-# 4. Start the development environment
-docker-compose up -d
-
-# 5. Access the application
-# Frontend: http://localhost:3001
-# API: http://localhost:3000
-# Health Check: http://localhost:3000/api/health
+# 4. Start development servers
+npm run dev
 ```
+
+#### Option 3: Docker Setup
+```bash
+# 1. Setup Docker environment
+node docker-setup.js
+
+# 2. Start with Docker (development)
+./docker-dev.sh
+
+# 3. Or use Docker Compose directly
+docker-compose up -d
+```
+
+### 🌐 Access Points
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **API Health**: http://localhost:3001/health
+- **Default Login**: admin@example.com / password
 
 ### 📖 Understanding the Codebase
 
