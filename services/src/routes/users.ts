@@ -128,7 +128,7 @@ router.put('/profile',
 );
 
 // Get all users (admin only)
-router.get('/', auth, requireRole(['admin']), async (req: Request, res: Response) => {
+router.get('/', auth, requireRole([UserRole.ADMIN]), async (req: Request, res: Response) => {
   try {
     const allUsers = users.map(user => {
       const { ...userWithoutPassword } = user;
@@ -149,7 +149,7 @@ router.get('/', auth, requireRole(['admin']), async (req: Request, res: Response
 });
 
 // Get user by ID (admin only)
-router.get('/:id', auth, requireRole(['admin']), async (req: Request, res: Response) => {
+router.get('/:id', auth, requireRole([UserRole.ADMIN]), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = users.find(u => u.id === id);
@@ -179,7 +179,7 @@ router.get('/:id', auth, requireRole(['admin']), async (req: Request, res: Respo
 // Update user role (admin only)
 router.put('/:id/role',
   auth,
-  requireRole(['admin']),
+  requireRole([UserRole.ADMIN]),
   [
     body('role')
       .isIn(['admin', 'user'])
@@ -221,7 +221,7 @@ router.put('/:id/role',
 );
 
 // Delete user (admin only)
-router.delete('/:id', auth, requireRole(['admin']), async (req: Request, res: Response) => {
+router.delete('/:id', auth, requireRole([UserRole.ADMIN]), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
