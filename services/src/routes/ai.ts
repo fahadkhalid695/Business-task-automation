@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { Router } from 'express';
 import { unifiedAiService } from '../services/unifiedAiService';
 import { auth } from '../middleware/auth';
