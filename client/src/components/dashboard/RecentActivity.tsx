@@ -40,7 +40,7 @@ const mockActivities: ActivityItem[] = [
     description: 'Processed 156 emails successfully',
     timestamp: '2 minutes ago',
     icon: <EmailIcon />,
-    color: 'success',
+    color: 'success' as const,
   },
   {
     id: '2',
@@ -49,7 +49,7 @@ const mockActivities: ActivityItem[] = [
     description: 'Processing quarterly report',
     timestamp: '5 minutes ago',
     icon: <TaskIcon />,
-    color: 'info',
+    color: 'info' as const,
   },
   {
     id: '3',
@@ -58,7 +58,7 @@ const mockActivities: ActivityItem[] = [
     description: 'Detected pattern in customer inquiries',
     timestamp: '12 minutes ago',
     icon: <AIIcon />,
-    color: 'primary',
+    color: 'primary' as const,
   },
   {
     id: '4',
@@ -67,7 +67,7 @@ const mockActivities: ActivityItem[] = [
     description: 'Gmail API connection restored',
     timestamp: '18 minutes ago',
     icon: <SuccessIcon />,
-    color: 'success',
+    color: 'success' as const,
   },
   {
     id: '5',
@@ -76,7 +76,7 @@ const mockActivities: ActivityItem[] = [
     description: 'Invalid data format detected',
     timestamp: '25 minutes ago',
     icon: <ErrorIcon />,
-    color: 'error',
+    color: 'error' as const,
   },
   {
     id: '6',
@@ -85,7 +85,7 @@ const mockActivities: ActivityItem[] = [
     description: 'Report will be generated tomorrow at 9 AM',
     timestamp: '1 hour ago',
     icon: <ScheduleIcon />,
-    color: 'info',
+    color: 'info' as const,
   },
 ];
 
