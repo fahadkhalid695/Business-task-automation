@@ -4,14 +4,15 @@
   "description": "Backend services for business task automation",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "nodemon src/api-gateway/FunctionalAPIGateway.ts",
+    "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node dist/api-gateway/FunctionalAPIGateway.js",
-    "start:functional": "ts-node src/api-gateway/FunctionalAPIGateway.ts",
+    "start": "node dist/server.js",
+    "start:dev": "ts-node src/server.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
+    "setup": "node setup.js",
     "setup:db": "node ../scripts/setup-database.js"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "winston-daily-rotate-file": "^4.7.1",
     "axios": "^1.6.2",
     "express-rate-limit": "^7.1.0",
+    "express-validator": "^7.0.1",
     "mongodb": "^6.3.0",
     "nodemailer": "^6.9.7",
     "pdf-lib": "^1.17.1",
