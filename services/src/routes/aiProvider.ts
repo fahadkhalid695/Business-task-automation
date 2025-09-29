@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { Router } from 'express';
 import { unifiedAiService, AIProvider } from '../services/unifiedAiService';
 import { auth, requirePermission, Permission } from '../middleware/auth';
@@ -36,7 +37,7 @@ router.post('/switch',
       .withMessage('Provider must be either "openai" or "grok"')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { provider } = req.body as { provider: AIProvider };
       
@@ -77,7 +78,7 @@ router.post('/test',
       .withMessage('Provider must be either "openai" or "grok"')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { prompt, provider } = req.body;
       
@@ -224,7 +225,7 @@ router.post('/generate-code',
       .withMessage('Language must be a string')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { description, language = 'javascript' } = req.body;
       
