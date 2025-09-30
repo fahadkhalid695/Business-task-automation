@@ -73,7 +73,7 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "artillery": "^2.0.0",
-    "pact": "^12.1.0",
+    "pact": "^12.1.4",
     "@pact-foundation/pact": "^12.1.4",
     "newman": "^6.0.0",
     "jest": "^29.7.0",
