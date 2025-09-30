@@ -230,6 +230,10 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
+
+    permissions: # required for SARIF upload
+      contents: read
+      security-events: write
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -245,7 +249,7 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
