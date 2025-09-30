@@ -24,7 +24,11 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-
+        cache: 'npm'
+        cache-dependency-path: |
+          services/package-lock.json
+          client/package-lock.json
+      
     - name: Generate cache key
       id: cache-key
       run: |
