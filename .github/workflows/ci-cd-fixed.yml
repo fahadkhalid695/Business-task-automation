@@ -30,6 +30,16 @@ jobs:
       run: |
         echo "key=deps-${{ hashFiles('package.json', 'client/package.json', 'services/package.json') }}" >> $GITHUB_OUTPUT
 
+    - name: Install dependencies
+      run: |
+        npm install --legacy-peer-deps || npm install --force
+        cd services
+        npm install --legacy-peer-deps || npm install --force
+        cd ..
+        cd client
+        npm install --legacy-peer-deps || npm install --force
+        cd ..
+
     - name: Cache dependencies
       uses: actions/cache@v3
       id: cache-deps
@@ -39,22 +49,6 @@ jobs:
           client/node_modules
           services/node_modules
         key: ${{ steps.cache-key.outputs.key }}
-
-    - name: Install dependencies
-      if: steps.cache-deps.outputs.cache-hit != 'true'
-      run: |
-        # Install root dependencies
-        npm install --legacy-peer-deps || npm install --force
-        
-        # Install services dependencies
-        cd services
-        npm install --legacy-peer-deps || npm install --force
-        cd ..
-        
-        # Install client dependencies
-        cd client
-        npm install --legacy-peer-deps || npm install --force
-        cd ..
 
   # Code quality and linting
   lint:
