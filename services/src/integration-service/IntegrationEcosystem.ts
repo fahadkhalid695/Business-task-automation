@@ -1,4 +1,4 @@
-import { logger } from '../shared/utils/Logger';
+import { logger } from '../shared/utils/logger';
 
 export interface IntegrationConfig {
   id: string;
@@ -128,7 +128,7 @@ export class IntegrationEcosystem {
           name: integration.getName(),
           category: integration.getCategory(),
           healthy: false,
-          message: error.message,
+          message: error instanceof Error ? error.message : 'Unknown error',
           capabilities: integration.getCapabilities()
         };
       }
