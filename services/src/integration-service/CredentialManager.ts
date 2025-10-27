@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import axios from 'axios';
 import { EncryptedCredentials, TokenRefreshResult } from './types/IntegrationTypes';
 import { logger } from '../shared/utils/logger';
 
@@ -9,7 +10,6 @@ export class CredentialManager {
   private readonly algorithm = 'aes-256-gcm';
   private readonly keyLength = 32;
   private readonly ivLength = 16;
-  private readonly tagLength = 16;
   private readonly encryptionKey: Buffer;
   private tokenRefreshHandlers: Map<string, (credentials: any) => Promise<TokenRefreshResult>>;
 
@@ -18,7 +18,7 @@ export class CredentialManager {
     this.encryptionKey = this.deriveKey(process.env.ENCRYPTION_KEY || 'default-key-change-in-production');
     this.tokenRefreshHandlers = new Map();
     this.setupTokenRefreshHandlers();
-    
+
     logger.info('CredentialManager initialized');
   }
 
@@ -29,22 +29,22 @@ export class CredentialManager {
     try {
       const plaintext = JSON.stringify(data);
       const iv = crypto.randomBytes(this.ivLength);
-      
+
       const cipher = crypto.createCipher(this.algorithm, this.encryptionKey);
       cipher.setAAD(Buffer.from('integration-credentials'));
-      
+
       let encrypted = cipher.update(plaintext, 'utf8', 'hex');
       encrypted += cipher.final('hex');
-      
+
       const tag = cipher.getAuthTag();
-      
+
       return {
         encrypted: encrypted,
         algorithm: this.algorithm,
         iv: iv.toString('hex') + tag.toString('hex')
       };
     } catch (error) {
-      logger.error('Failed to encrypt credentials', { error: error.message });
+      logger.error('Failed to encrypt credentials', { error: error instanceof Error ? error.message : 'Unknown error' });
       throw new Error('Credential encryption failed');
     }
   }
@@ -57,17 +57,17 @@ export class CredentialManager {
       const ivAndTag = Buffer.from(credentials.iv, 'hex');
       const iv = ivAndTag.slice(0, this.ivLength);
       const tag = ivAndTag.slice(this.ivLength);
-      
+
       const decipher = crypto.createDecipher(credentials.algorithm, this.encryptionKey);
       decipher.setAAD(Buffer.from('integration-credentials'));
       decipher.setAuthTag(tag);
-      
+
       let decrypted = decipher.update(credentials.encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
-      
+
       return JSON.parse(decrypted);
     } catch (error) {
-      logger.error('Failed to decrypt credentials', { error: error.message });
+      logger.error('Failed to decrypt credentials', { error: error instanceof Error ? error.message : 'Unknown error' });
       throw new Error('Credential decryption failed');
     }
   }
@@ -78,17 +78,17 @@ export class CredentialManager {
   async rotate(integrationId: string, service: string, currentCredentials: EncryptedCredentials): Promise<boolean> {
     try {
       logger.info(`Rotating credentials for integration ${integrationId}`);
-      
+
       const decryptedCredentials = await this.decrypt(currentCredentials);
       const refreshHandler = this.tokenRefreshHandlers.get(service);
-      
+
       if (!refreshHandler) {
         logger.warn(`No token refresh handler found for service ${service}`);
         return false;
       }
 
       const refreshResult = await refreshHandler(decryptedCredentials);
-      
+
       if (!refreshResult.success) {
         logger.error(`Token refresh failed for integration ${integrationId}`, {
           error: refreshResult.error
@@ -100,10 +100,10 @@ export class CredentialManager {
       if (refreshResult.newToken) {
         decryptedCredentials.accessToken = refreshResult.newToken;
         decryptedCredentials.expiresAt = refreshResult.expiresAt;
-        
+
         // Re-encrypt with new credentials
-        const newEncryptedCredentials = await this.encrypt(decryptedCredentials);
-        
+        await this.encrypt(decryptedCredentials);
+
         // In a real implementation, you would update the database here
         logger.info(`Credentials rotated successfully for integration ${integrationId}`);
         return true;
@@ -112,7 +112,7 @@ export class CredentialManager {
       return false;
     } catch (error) {
       logger.error(`Failed to rotate credentials for integration ${integrationId}`, {
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
       return false;
     }
@@ -148,25 +148,22 @@ export class CredentialManager {
     // Gmail OAuth2 token refresh
     this.tokenRefreshHandlers.set('gmail', async (credentials: any): Promise<TokenRefreshResult> => {
       try {
-        const response = await fetch('https://oauth2.googleapis.com/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
+        const response = await axios.post('https://oauth2.googleapis.com/token',
+          new URLSearchParams({
             client_id: credentials.clientId,
             client_secret: credentials.clientSecret,
             refresh_token: credentials.refreshToken,
             grant_type: 'refresh_token'
-          })
-        });
+          }).toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            }
+          }
+        );
 
-        if (!response.ok) {
-          throw new Error(`Token refresh failed: ${response.statusText}`);
-        }
+        const data = response.data;
 
-        const data = await response.json();
-        
         return {
           success: true,
           newToken: data.access_token,
@@ -175,7 +172,7 @@ export class CredentialManager {
       } catch (error) {
         return {
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Gmail token refresh failed'
         };
       }
     });
@@ -183,26 +180,23 @@ export class CredentialManager {
     // Outlook OAuth2 token refresh
     this.tokenRefreshHandlers.set('outlook', async (credentials: any): Promise<TokenRefreshResult> => {
       try {
-        const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
+        const response = await axios.post('https://login.microsoftonline.com/common/oauth2/v2.0/token',
+          new URLSearchParams({
             client_id: credentials.clientId,
             client_secret: credentials.clientSecret,
             refresh_token: credentials.refreshToken,
             grant_type: 'refresh_token',
             scope: 'https://graph.microsoft.com/.default'
-          })
-        });
+          }).toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            }
+          }
+        );
 
-        if (!response.ok) {
-          throw new Error(`Token refresh failed: ${response.statusText}`);
-        }
+        const data = response.data;
 
-        const data = await response.json();
-        
         return {
           success: true,
           newToken: data.access_token,
@@ -211,7 +205,7 @@ export class CredentialManager {
       } catch (error) {
         return {
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Outlook token refresh failed'
         };
       }
     });
@@ -219,29 +213,26 @@ export class CredentialManager {
     // Slack token refresh (if using OAuth)
     this.tokenRefreshHandlers.set('slack', async (credentials: any): Promise<TokenRefreshResult> => {
       try {
-        const response = await fetch('https://slack.com/api/oauth.v2.access', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
+        const response = await axios.post('https://slack.com/api/oauth.v2.access',
+          new URLSearchParams({
             client_id: credentials.clientId,
             client_secret: credentials.clientSecret,
             refresh_token: credentials.refreshToken,
             grant_type: 'refresh_token'
-          })
-        });
+          }).toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            }
+          }
+        );
 
-        if (!response.ok) {
-          throw new Error(`Token refresh failed: ${response.statusText}`);
-        }
+        const data = response.data;
 
-        const data = await response.json();
-        
         if (!data.ok) {
           throw new Error(`Slack API error: ${data.error}`);
         }
-        
+
         return {
           success: true,
           newToken: data.access_token,
@@ -250,7 +241,7 @@ export class CredentialManager {
       } catch (error) {
         return {
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Slack token refresh failed'
         };
       }
     });
@@ -259,25 +250,22 @@ export class CredentialManager {
     this.tokenRefreshHandlers.set('salesforce', async (credentials: any): Promise<TokenRefreshResult> => {
       try {
         const instanceUrl = credentials.instanceUrl || 'https://login.salesforce.com';
-        const response = await fetch(`${instanceUrl}/services/oauth2/token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
+        const response = await axios.post(`${instanceUrl}/services/oauth2/token`,
+          new URLSearchParams({
             client_id: credentials.clientId,
             client_secret: credentials.clientSecret,
             refresh_token: credentials.refreshToken,
             grant_type: 'refresh_token'
-          })
-        });
+          }).toString(),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            }
+          }
+        );
 
-        if (!response.ok) {
-          throw new Error(`Token refresh failed: ${response.statusText}`);
-        }
+        const data = response.data;
 
-        const data = await response.json();
-        
         return {
           success: true,
           newToken: data.access_token,
@@ -286,7 +274,7 @@ export class CredentialManager {
       } catch (error) {
         return {
           success: false,
-          error: error.message
+          error: error instanceof Error ? error.message : 'Salesforce token refresh failed'
         };
       }
     });

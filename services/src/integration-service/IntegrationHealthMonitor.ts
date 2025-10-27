@@ -2,8 +2,7 @@ import { EventEmitter } from 'events';
 import { 
   IntegrationAdapter, 
   HealthStatus, 
-  HealthDetails,
-  IntegrationEventType 
+  HealthDetails
 } from './types/IntegrationTypes';
 import { logger } from '../shared/utils/logger';
 
@@ -11,7 +10,7 @@ import { logger } from '../shared/utils/logger';
  * IntegrationHealthMonitor - Monitors health and performance of integrations
  */
 export class IntegrationHealthMonitor extends EventEmitter {
-  private monitoringIntervals: Map<string, NodeJS.Timeout>;
+  private monitoringIntervals: Map<string, NodeJS.Timer>;
   private healthStatuses: Map<string, HealthStatus>;
   private adapters: Map<string, IntegrationAdapter>;
   private monitoringConfig: {
@@ -72,7 +71,7 @@ export class IntegrationHealthMonitor extends EventEmitter {
       
     } catch (error) {
       logger.error(`Failed to start monitoring for integration ${integrationId}`, {
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -97,7 +96,7 @@ export class IntegrationHealthMonitor extends EventEmitter {
       
     } catch (error) {
       logger.error(`Failed to stop monitoring for integration ${integrationId}`, {
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -162,12 +161,12 @@ export class IntegrationHealthMonitor extends EventEmitter {
 
     } catch (error) {
       logger.error(`Health check failed for integration ${integrationId}`, {
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         responseTime: Date.now() - startTime
       });
 
       // Update status to reflect failure
-      this.recordHealthCheckFailure(integrationId, error.message);
+      this.recordHealthCheckFailure(integrationId, error instanceof Error ? error.message : 'Unknown error');
     }
   }
 
@@ -181,7 +180,8 @@ export class IntegrationHealthMonitor extends EventEmitter {
   ): HealthStatus {
     const details: HealthDetails = {
       ...currentStatus.details,
-      ...adapterHealth.details
+      ...adapterHealth.details,
+      consecutiveFailures: currentStatus.details?.consecutiveFailures || 0
     };
 
     // Determine status based on response time and adapter health
