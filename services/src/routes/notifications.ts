@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { Router } from 'express';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -37,7 +38,7 @@ let notifications = [
 ];
 
 // Get all notifications for current user
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req: Request, res: Response) => {
   try {
     const userNotifications = notifications
       .filter(notification => notification.userId === req.user?.id)
@@ -57,7 +58,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get unread notifications count
-router.get('/unread-count', auth, async (req, res) => {
+router.get('/unread-count', auth, async (req: Request, res: Response) => {
   try {
     const unreadCount = notifications.filter(
       notification => notification.userId === req.user?.id && !notification.read
@@ -77,7 +78,7 @@ router.get('/unread-count', auth, async (req, res) => {
 });
 
 // Mark notification as read
-router.put('/:id/read', auth, async (req, res) => {
+router.put('/:id/read', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const notificationIndex = notifications.findIndex(
@@ -107,7 +108,7 @@ router.put('/:id/read', auth, async (req, res) => {
 });
 
 // Mark all notifications as read
-router.put('/mark-all-read', auth, async (req, res) => {
+router.put('/mark-all-read', auth, async (req: Request, res: Response) => {
   try {
     notifications = notifications.map(notification => 
       notification.userId === req.user?.id 
@@ -149,7 +150,7 @@ router.post('/',
       .withMessage('User ID must be a string')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { title, message, type, userId } = req.body;
       
@@ -180,7 +181,7 @@ router.post('/',
 );
 
 // Delete notification
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const notificationIndex = notifications.findIndex(

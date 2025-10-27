@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 import { Router } from 'express';
 import { auth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
@@ -36,7 +37,7 @@ let integrations = [
 ];
 
 // Get all integrations
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req: Request, res: Response) => {
   try {
     res.json({
       success: true,
@@ -52,7 +53,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get integration by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const integration = integrations.find(i => i.id === id);
@@ -98,7 +99,7 @@ router.post('/',
       .withMessage('Config must be an object')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { name, type, description, config } = req.body;
       
@@ -153,7 +154,7 @@ router.put('/:id',
       .withMessage('Config must be an object')
   ],
   validate,
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const integrationIndex = integrations.findIndex(i => i.id === id);
@@ -188,7 +189,7 @@ router.put('/:id',
 );
 
 // Delete integration
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const integrationIndex = integrations.findIndex(i => i.id === id);
@@ -216,7 +217,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Test integration
-router.post('/:id/test', auth, async (req, res) => {
+router.post('/:id/test', auth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const integration = integrations.find(i => i.id === id);

@@ -1,4 +1,4 @@
-name: CI/CD Pipeline (Fixed)
+name: CI/CD Pipeline
 
 on:
   push:
@@ -17,44 +17,39 @@ jobs:
     outputs:
       cache-key: ${{ steps.cache-key.outputs.key }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-    - name: Generate cache key
-      id: cache-key
-      run: |
-        echo "key=deps-${{ hashFiles('package.json', 'client/package.json', 'services/package.json') }}" >> $GITHUB_OUTPUT
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          echo "key=deps-${{ hashFiles('**/package-lock.json') }}" >> $GITHUB_OUTPUT
 
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      id: cache-deps
-      with:
-        path: |
-          node_modules
-          client/node_modules
-          services/node_modules
-        key: ${{ steps.cache-key.outputs.key }}
+      - name: Install root dependencies
+        run: npm install --legacy-peer-deps || npm install --force
 
-    - name: Install dependencies
-      if: steps.cache-deps.outputs.cache-hit != 'true'
-      run: |
-        # Install root dependencies
-        npm install --legacy-peer-deps || npm install --force
-        
-        # Install services dependencies
-        cd services
-        npm install --legacy-peer-deps || npm install --force
-        cd ..
-        
-        # Install client dependencies
-        cd client
-        npm install --legacy-peer-deps || npm install --force
-        cd ..
+      - name: Install services dependencies
+        working-directory: ./services
+        run: npm install --legacy-peer-deps || npm install --force
+
+      - name: Install client dependencies
+        working-directory: ./client
+        run: npm install --legacy-peer-deps || npm install --force
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        id: cache-deps
+        with:
+          path: |
+            node_modules
+            client/node_modules
+            services/node_modules
+          key: ${{ steps.cache-key.outputs.key }}
 
   # Code quality and linting
   lint:
@@ -62,46 +57,41 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-    - name: Restore dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          node_modules
-          client/node_modules
-          services/node_modules
-        key: ${{ needs.setup.outputs.cache-key }}
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            client/node_modules
+            services/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
 
-    - name: Fix build issues
-      run: |
-        npm run fix:all || echo "Fix script not available, continuing..."
+      - name: Fix build issues
+        run: npm run fix:all || echo "Fix script not available, continuing..."
 
-    - name: Lint services
-      working-directory: ./services
-      run: |
-        npm run lint || echo "Lint script not available"
+      - name: Lint services
+        working-directory: ./services
+        run: npm run lint || echo "Lint script not available"
 
-    - name: Lint client
-      working-directory: ./client
-      run: |
-        npm run lint || echo "Lint script not available"
+      - name: Lint client
+        working-directory: ./client
+        run: npm run lint || echo "Lint script not available"
 
-    - name: Type check services
-      working-directory: ./services
-      run: |
-        npm run type-check || npx tsc --noEmit || echo "Type check not available"
+      - name: Type check services
+        working-directory: ./services
+        run: npm run type-check || npx tsc --noEmit || echo "Type check not available"
 
-    - name: Type check client
-      working-directory: ./client
-      run: |
-        npm run type-check || npx tsc --noEmit || echo "Type check not available"
+      - name: Type check client
+        working-directory: ./client
+        run: npm run type-check || npx tsc --noEmit || echo "Type check not available"
 
   # Build applications
   build:
@@ -109,45 +99,42 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-    - name: Restore dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          node_modules
-          client/node_modules
-          services/node_modules
-        key: ${{ needs.setup.outputs.cache-key }}
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            client/node_modules
+            services/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
 
-    - name: Fix build issues
-      run: |
-        npm run fix:all || echo "Fix script not available, continuing..."
+      - name: Fix build issues
+        run: npm run fix:all || echo "Fix script not available, continuing..."
 
-    - name: Build services
-      working-directory: ./services
-      run: |
-        npm run build || echo "Build completed"
+      - name: Build services
+        working-directory: ./services
+        run: npm run build || echo "Build completed"
 
-    - name: Build client
-      working-directory: ./client
-      run: |
-        npm run build || echo "Build completed"
+      - name: Build client
+        working-directory: ./client
+        run: npm run build || echo "Build completed"
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-artifacts
-        path: |
-          services/dist
-          client/build
-        retention-days: 1
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            services/dist
+            client/build
+          retention-days: 1
 
   # Run tests
   test:
@@ -179,76 +166,77 @@ jobs:
           --health-retries 5
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-    - name: Restore dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          node_modules
-          client/node_modules
-          services/node_modules
-        key: ${{ needs.setup.outputs.cache-key }}
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            client/node_modules
+            services/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
 
-    - name: Fix build issues
-      run: |
-        npm run fix:all || echo "Fix script not available, continuing..."
+      - name: Fix build issues
+        run: npm run fix:all || echo "Fix script not available, continuing..."
 
-    - name: Run services tests
-      working-directory: ./services
-      run: |
-        npm test -- --coverage --watchAll=false || echo "Tests completed"
-      env:
-        NODE_ENV: test
-        MONGODB_URI: mongodb://admin:password123@localhost:27017/business-automation-test?authSource=admin
-        REDIS_URL: redis://localhost:6379
-        JWT_SECRET: test-secret
+      - name: Run services tests
+        working-directory: ./services
+        run: npm test -- --coverage --watchAll=false || echo "Tests completed"
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://admin:password123@localhost:27017/business-automation-test?authSource=admin
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret
 
-    - name: Run client tests
-      working-directory: ./client
-      run: |
-        npm test -- --coverage --watchAll=false --passWithNoTests || echo "Tests completed"
+      - name: Run client tests
+        working-directory: ./client
+        run: npm test -- --coverage --watchAll=false --passWithNoTests || echo "Tests completed"
 
-    - name: Upload coverage reports
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: coverage-reports
-        path: |
-          services/coverage
-          client/coverage
-        retention-days: 7
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: |
+            services/coverage
+            client/coverage
+          retention-days: 7
 
   # Security scan
   security:
     name: Security Scan
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
+
+    permissions:
+      contents: read
+      security-events: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
 
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   # Deploy to staging (develop branch)
   deploy-staging:
@@ -260,25 +248,24 @@ jobs:
       name: staging
       url: https://staging.business-automation.example.com
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: build-artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
 
-    - name: Deploy to staging
-      run: |
-        echo "🚀 Deploying to staging environment..."
-        echo "This would deploy the application to staging"
-        echo "Build artifacts are ready for deployment"
+      - name: Deploy to staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "This would deploy the application to staging"
+          echo "Build artifacts are ready for deployment"
 
-    - name: Run deployment verification
-      run: |
-        echo "🔍 Verifying staging deployment..."
-        # Add actual verification steps here
-        echo "✅ Staging deployment verified"
+      - name: Run deployment verification
+        run: |
+          echo "🔍 Verifying staging deployment..."
+          echo "✅ Staging deployment verified"
 
   # Deploy to production (main branch)
   deploy-production:
@@ -290,25 +277,24 @@ jobs:
       name: production
       url: https://business-automation.example.com
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: build-artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
 
-    - name: Deploy to production
-      run: |
-        echo "🚀 Deploying to production environment..."
-        echo "This would deploy the application to production"
-        echo "Build artifacts are ready for deployment"
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "This would deploy the application to production"
+          echo "Build artifacts are ready for deployment"
 
-    - name: Run deployment verification
-      run: |
-        echo "🔍 Verifying production deployment..."
-        # Add actual verification steps here
-        echo "✅ Production deployment verified"
+      - name: Run deployment verification
+        run: |
+          echo "🔍 Verifying production deployment..."
+          echo "✅ Production deployment verified"
 
   # Notification
   notify:
@@ -317,17 +303,18 @@ jobs:
     needs: [lint, build, test, security]
     if: always()
     steps:
-    - name: Notify success
-      if: needs.lint.result == 'success' && needs.build.result == 'success' && needs.test.result == 'success'
-      run: |
-        echo "✅ Pipeline completed successfully!"
-        echo "All checks passed: Lint ✅ Build ✅ Test ✅"
+      - name: Notify success
+        if: needs.lint.result == 'success' && needs.build.result == 'success' && needs.test.result == 'success'
+        run: |
+          echo "✅ Pipeline completed successfully!"
+          echo "All checks passed: Lint ✅ Build ✅ Test ✅"
 
-    - name: Notify failure
-      if: needs.lint.result == 'failure' || needs.build.result == 'failure' || needs.test.result == 'failure'
-      run: |
-        echo "❌ Pipeline failed!"
-        echo "Lint: ${{ needs.lint.result }}"
-        echo "Build: ${{ needs.build.result }}"
-        echo "Test: ${{ needs.test.result }}"
-        exit 1
+      - name: Notify failure
+        if: needs.lint.result == 'failure' || needs.build.result == 'failure' || needs.test.result == 'failure'
+        run: |
+          echo "❌ Pipeline failed!"
+          echo "Lint: ${{ needs.lint.result }}"
+          echo "Build: ${{ needs.build.result }}"
+          echo "Test: ${{ needs.test.result }}"
+          exit 1
+
