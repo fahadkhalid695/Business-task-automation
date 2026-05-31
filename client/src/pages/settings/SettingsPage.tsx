@@ -64,8 +64,8 @@ export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [tabValue, setTabValue] = useState(0);
-  const [, setProfileDialogOpen] = useState(false);
-  const [, setChangePasswordDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,

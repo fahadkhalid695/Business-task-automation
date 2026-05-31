@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 interface SocketContextType {
-  socket: Socket | null;
+  socket: any | null;
   isConnected: boolean;
 }
 
@@ -24,42 +26,35 @@ interface SocketProviderProps {
 }
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Initialize socket connection
-    // We'll connect to socket when user is authenticated
-    // For now, just provide the context without connection
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-      const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
-        auth: {
-          token,
-        },
-      });
-
-      newSocket.on('connect', () => {
-        setIsConnected(true);
-        console.log('Socket connected');
-      });
-
-      newSocket.on('disconnect', () => {
+    // Check backend health to determine connection status
+    const checkHealth = async () => {
+      try {
+        const baseUrl = API_URL.replace('/api', '');
+        const response = await axios.get(`${baseUrl}/health`, { timeout: 5000 });
+        if (response.data?.success || response.data?.data?.status === 'healthy') {
+          setIsConnected(true);
+        } else {
+          setIsConnected(false);
+        }
+      } catch {
+        // Backend unreachable - still allow app to work in demo mode
         setIsConnected(false);
-        console.log('Socket disconnected');
-      });
+      }
+    };
 
-      setSocket(newSocket);
+    checkHealth();
 
-      return () => {
-        newSocket.close();
-      };
-    }
+    // Poll health every 30 seconds
+    const interval = setInterval(checkHealth, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>
+    <SocketContext.Provider value={{ socket: null, isConnected }}>
       {children}
     </SocketContext.Provider>
   );

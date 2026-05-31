@@ -57,13 +57,14 @@ const createAppTheme = (isDarkMode: boolean) => {
         dark: '#1b5e20',
       },
       background: {
-        default: isDarkMode ? '#121212' : '#f5f5f5',
-        paper: isDarkMode ? '#1e1e1e' : '#ffffff',
+        default: isDarkMode ? '#0a1929' : '#f5f5f5',
+        paper: isDarkMode ? '#1a2332' : '#ffffff',
       },
       text: {
-        primary: isDarkMode ? '#ffffff' : 'rgba(0, 0, 0, 0.87)',
-        secondary: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+        primary: isDarkMode ? '#e7ebf0' : 'rgba(0, 0, 0, 0.87)',
+        secondary: isDarkMode ? '#b2bac2' : 'rgba(0, 0, 0, 0.6)',
       },
+      divider: isDarkMode ? 'rgba(194, 224, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
     },
     typography: {
       fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',

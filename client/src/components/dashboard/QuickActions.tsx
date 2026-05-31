@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardHeader,
@@ -19,46 +20,48 @@ import {
   Extension as IntegrationIcon,
 } from '@mui/icons-material';
 
-const quickActions = [
-  {
-    title: 'Create New Task',
-    description: 'Start a new automation task',
-    icon: <AddIcon />,
-    action: () => console.log('Create task'),
-  },
-  {
-    title: 'Run Workflow',
-    description: 'Execute a workflow template',
-    icon: <PlayIcon />,
-    action: () => console.log('Run workflow'),
-  },
-  {
-    title: 'Upload Document',
-    description: 'Process a new document',
-    icon: <UploadIcon />,
-    action: () => console.log('Upload document'),
-  },
-  {
-    title: 'View Analytics',
-    description: 'Check performance metrics',
-    icon: <AnalyticsIcon />,
-    action: () => console.log('View analytics'),
-  },
-  {
-    title: 'Manage Integrations',
-    description: 'Configure external services',
-    icon: <IntegrationIcon />,
-    action: () => console.log('Manage integrations'),
-  },
-  {
-    title: 'System Settings',
-    description: 'Configure platform settings',
-    icon: <SettingsIcon />,
-    action: () => console.log('System settings'),
-  },
-];
-
 export const QuickActions: React.FC = () => {
+  const navigate = useNavigate();
+
+  const quickActions = [
+    {
+      title: 'Create New Task',
+      description: 'Start a new automation task',
+      icon: <AddIcon />,
+      action: () => navigate('/tasks'),
+    },
+    {
+      title: 'Run Workflow',
+      description: 'Execute a workflow template',
+      icon: <PlayIcon />,
+      action: () => navigate('/workflows'),
+    },
+    {
+      title: 'Upload Document',
+      description: 'Process a new document',
+      icon: <UploadIcon />,
+      action: () => navigate('/tasks'),
+    },
+    {
+      title: 'View Analytics',
+      description: 'Check performance metrics',
+      icon: <AnalyticsIcon />,
+      action: () => navigate('/analytics'),
+    },
+    {
+      title: 'Manage Integrations',
+      description: 'Configure external services',
+      icon: <IntegrationIcon />,
+      action: () => navigate('/integrations'),
+    },
+    {
+      title: 'System Settings',
+      description: 'Configure platform settings',
+      icon: <SettingsIcon />,
+      action: () => navigate('/settings'),
+    },
+  ];
+
   return (
     <Card>
       <CardHeader
