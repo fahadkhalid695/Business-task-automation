@@ -17,12 +17,8 @@ import {
   MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -35,7 +31,6 @@ import {
 } from 'recharts';
 
 import { StatsCard } from '../../components/dashboard/StatsCard';
-import { TaskStatusChart } from '../../components/dashboard/TaskStatusChart';
 import { RecentActivity } from '../../components/dashboard/RecentActivity';
 import { QuickActions } from '../../components/dashboard/QuickActions';
 

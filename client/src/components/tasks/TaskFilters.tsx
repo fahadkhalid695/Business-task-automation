@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Menu,
-  MenuItem,
   FormControl,
   FormLabel,
   FormGroup,

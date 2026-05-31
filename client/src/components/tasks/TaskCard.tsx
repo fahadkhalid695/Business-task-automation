@@ -18,7 +18,6 @@ import {
   MoreVert as MoreVertIcon,
   PlayArrow as PlayIcon,
   Pause as PauseIcon,
-  Stop as StopIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Schedule as ScheduleIcon,

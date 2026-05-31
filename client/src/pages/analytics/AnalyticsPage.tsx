@@ -13,7 +13,6 @@ import {
   MenuItem,
   Tabs,
   Tab,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -29,14 +28,10 @@ import {
   TrendingDown as TrendingDownIcon,
   Download as DownloadIcon,
   Refresh as RefreshIcon,
-  FilterList as FilterIcon,
 } from '@mui/icons-material';
 import {
-  LineChart,
   Line,
-  AreaChart,
   Area,
-  BarChart,
   Bar,
   PieChart,
   Pie,

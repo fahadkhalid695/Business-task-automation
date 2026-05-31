@@ -4,24 +4,12 @@ import {
   Box,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  CardHeader,
   Button,
   Chip,
   IconButton,
-  Menu,
-  MenuItem,
   TextField,
   InputAdornment,
   Fab,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
   Tabs,
   Tab,
   Badge,
@@ -30,13 +18,9 @@ import {
   Add as AddIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
-  MoreVert as MoreVertIcon,
-  PlayArrow as PlayIcon,
-  Pause as PauseIcon,
-  Stop as StopIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext } from 'react-beautiful-dnd';
 
 import { TaskCard } from '../../components/tasks/TaskCard';
 import { TaskFilters } from '../../components/tasks/TaskFilters';

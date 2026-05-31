@@ -5,7 +5,6 @@ import {
   Drawer,
   AppBar,
   Toolbar,
-  Typography,
   IconButton,
   useTheme,
   useMediaQuery,
@@ -19,7 +18,7 @@ const DRAWER_WIDTH = 280;
 
 export const Layout: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  useMediaQuery(theme.breakpoints.down('lg'));
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleDrawerToggle = () => {

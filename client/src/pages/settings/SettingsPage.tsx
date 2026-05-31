@@ -8,7 +8,6 @@ import {
   CardContent,
   CardHeader,
   Switch,
-  FormControlLabel,
   FormControl,
   InputLabel,
   Select,
@@ -20,22 +19,15 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  IconButton,
   Chip,
   Avatar,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Alert,
   Tabs,
   Tab,
-  Paper,
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Add as AddIcon,
   Notifications as NotificationsIcon,
   Security as SecurityIcon,
   Palette as PaletteIcon,
@@ -69,11 +61,11 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const SettingsPage: React.FC = () => {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [tabValue, setTabValue] = useState(0);
-  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+  const [, setProfileDialogOpen] = useState(false);
+  const [, setChangePasswordDialogOpen] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
