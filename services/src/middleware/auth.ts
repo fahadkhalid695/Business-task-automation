@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import { AuditLogger } from '../utils/auditLogger';
+import { UserRole } from '../shared/types';
 
 interface AuthenticatedUser {
   id: string;
@@ -11,12 +12,7 @@ interface AuthenticatedUser {
   exp: number;
 }
 
-export enum UserRole {
-  ADMIN = 'admin',
-  MANAGER = 'manager',
-  USER = 'user',
-  VIEWER = 'viewer'
-}
+export { UserRole };
 
 export enum Permission {
   // Workflow permissions

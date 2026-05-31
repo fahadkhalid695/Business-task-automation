@@ -54,7 +54,12 @@ export interface User {
   updatedAt: Date;
 }
 
-export type UserRole = 'admin' | 'manager' | 'user' | 'viewer';
+export enum UserRole {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  USER = 'user',
+  VIEWER = 'viewer'
+}
 
 export interface ApiResponse<T = any> {
   success: boolean;
