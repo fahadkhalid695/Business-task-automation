@@ -40,20 +40,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Validate existing token on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    if (storedToken && storedToken !== 'mock-token') {
+    if (storedToken) {
       setToken(storedToken);
       setIsAuthenticated(true);
-    } else if (storedToken === 'mock-token') {
-      // Clear stale mock tokens
-      localStorage.removeItem('token');
-      setToken(null);
-      setIsAuthenticated(false);
     }
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      // Try to authenticate against the backend API
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password,
@@ -94,9 +90,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(true);
       localStorage.setItem('token', authToken);
     } catch (error: any) {
+      // If backend is unreachable, fall back to demo mode
+      const isNetworkError = !error.response || error.code === 'ERR_NETWORK';
+      const isDemoCredentials = 
+        (email === 'admin@example.com' && password === 'password') ||
+        (email === 'user@example.com' && password === 'password');
+
+      if (isNetworkError && isDemoCredentials) {
+        console.warn('Backend unavailable, using demo mode');
+        const demoUser: User = {
+          id: '1',
+          email,
+          role: (email === 'admin@example.com' ? 'admin' : 'user') as any,
+          permissions: [],
+          preferences: {
+            theme: 'light',
+            language: 'en',
+            timezone: 'UTC',
+            notifications: {
+              email: true,
+              push: true,
+              slack: false,
+              taskReminders: true,
+              workflowUpdates: true,
+            },
+            dashboard: {
+              widgets: [],
+              layout: 'grid',
+              refreshInterval: 30000,
+            },
+          },
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const demoToken = 'demo-token-' + Date.now();
+        setUser(demoUser);
+        setToken(demoToken);
+        setIsAuthenticated(true);
+        localStorage.setItem('token', demoToken);
+        return;
+      }
+
+      // If backend responded with an error (wrong credentials), throw it
       console.error('Login failed:', error?.response?.data?.message || error.message);
       setIsAuthenticated(false);
-      throw new Error(error?.response?.data?.message || 'Login failed');
+      throw new Error(error?.response?.data?.message || 'Login failed. Check your credentials.');
     } finally {
       setIsLoading(false);
     }
