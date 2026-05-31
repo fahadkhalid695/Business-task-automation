@@ -1,17 +1,27 @@
 import OpenAI from 'openai';
 
 class AIService {
-  private openai: OpenAI;
+  private openai: OpenAI | null = null;
 
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (apiKey && apiKey !== 'your-openai-api-key' && apiKey !== 'your-openai-api-key-here') {
+      this.openai = new OpenAI({ apiKey });
+    } else {
+      console.warn('OpenAI API key not configured. OpenAI provider will be unavailable.');
+    }
+  }
+
+  private ensureClient(): OpenAI {
+    if (!this.openai) {
+      throw new Error('OpenAI API key not configured. Set OPENAI_API_KEY environment variable.');
+    }
+    return this.openai;
   }
 
   async generateText(prompt: string, options: any = {}): Promise<string> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: options.model || 'gpt-3.5-turbo',
         messages: [
           {
@@ -33,7 +43,7 @@ class AIService {
 
   async analyzeText(text: string): Promise<any> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           {
@@ -56,7 +66,7 @@ class AIService {
 
   async classifyText(text: string, categories: string[]): Promise<string> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           {
@@ -78,7 +88,7 @@ class AIService {
 
   async generateSummary(text: string): Promise<string> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           {
@@ -100,7 +110,7 @@ class AIService {
 
   async translateText(text: string, targetLanguage: string): Promise<string> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           {
@@ -122,7 +132,7 @@ class AIService {
 
   async generateWorkflowSuggestions(description: string): Promise<any[]> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: 'gpt-4',
         messages: [
           {
@@ -148,7 +158,7 @@ class AIService {
 
   async optimizeWorkflow(workflow: any): Promise<any> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: 'gpt-4',
         messages: [
           {
@@ -174,7 +184,7 @@ class AIService {
 
   async detectAnomalies(data: any[]): Promise<any[]> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: 'gpt-4',
         messages: [
           {
@@ -200,7 +210,7 @@ class AIService {
 
   async generateInsights(data: any): Promise<string[]> {
     try {
-      const response = await this.openai.chat.completions.create({
+      const response = await this.ensureClient().chat.completions.create({
         model: 'gpt-4',
         messages: [
           {
