@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validate';
+import { jwtService, UserRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -53,11 +53,11 @@ router.post('/login',
       }
       
       // Generate JWT
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
+      const token = jwtService.generateToken({
+        id: user.id,
+        email: user.email,
+        role: user.role as UserRole
+      });
       
       res.json({
         success: true,
@@ -114,11 +114,11 @@ router.post('/register',
       users.push(newUser);
       
       // Generate JWT
-      const token = jwt.sign(
-        { id: newUser.id, email: newUser.email, role: newUser.role },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
+      const token = jwtService.generateToken({
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role as UserRole
+      });
       
       res.status(201).json({
         success: true,
