@@ -33,8 +33,8 @@ router.post('/switch',
   requirePermission(Permission.AI_PROVIDER_SWITCH),
   [
     body('provider')
-      .isIn(['openai', 'grok'])
-      .withMessage('Provider must be either "openai" or "grok"')
+      .isIn(['openai', 'grok', 'gemini'])
+      .withMessage('Provider must be "openai", "grok", or "gemini"')
   ],
   validate,
   async (req: Request, res: Response) => {
@@ -74,8 +74,8 @@ router.post('/test',
       }),
     body('provider')
       .optional()
-      .isIn(['openai', 'grok'])
-      .withMessage('Provider must be either "openai" or "grok"')
+      .isIn(['openai', 'grok', 'gemini'])
+      .withMessage('Provider must be "openai", "grok", or "gemini"')
   ],
   validate,
   async (req: Request, res: Response) => {
@@ -168,8 +168,8 @@ router.post('/generate',
       .withMessage('Options must be an object'),
     body('provider')
       .optional()
-      .isIn(['openai', 'grok'])
-      .withMessage('Provider must be either "openai" or "grok"')
+      .isIn(['openai', 'grok', 'gemini'])
+      .withMessage('Provider must be "openai", "grok", or "gemini"')
   ],
   validate,
   async (req: Request, res: Response) => {

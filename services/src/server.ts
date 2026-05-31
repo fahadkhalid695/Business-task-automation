@@ -214,7 +214,7 @@ process.on('SIGINT', () => {
 app.listen(port, () => {
   console.log(`🚀 Business Automation API Server running on port ${port}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🤖 AI Provider: ${process.env.AI_PROVIDER || 'grok'}`);
+  console.log(`🤖 AI Provider: ${process.env.AI_PROVIDER || 'gemini'}`);
   console.log(`🔒 Security: Enhanced security measures enabled`);
 });
 

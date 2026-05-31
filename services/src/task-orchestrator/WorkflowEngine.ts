@@ -319,35 +319,63 @@ export class WorkflowEngine extends EventEmitter {
 
   private evaluateCondition(condition: string, context: any): boolean {
     try {
-      // Enhanced condition evaluation with safety checks
+      // Safe condition evaluation without using new Function()
       if (!condition || typeof condition !== 'string') {
         return false;
       }
 
-      // Support for common condition patterns
-      if (condition.includes('context.')) {
-        // Replace context references with safe property access
-        const safeCondition = condition.replace(
-          /context\.([a-zA-Z_$][a-zA-Z0-9_$]*)/g,
-          'this.getContextValue(context, "$1")'
-        );
-        
-        const evaluator = {
-          getContextValue: this.getContextValue.bind(this),
-          context
-        };
-        
-        const func = new Function('context', `
-          const getContextValue = this.getContextValue;
-          return ${safeCondition};
-        `).bind(evaluator);
-        
-        return Boolean(func(context));
+      // Support for safe condition patterns using property access
+      // Format: "context.propertyName operator value"
+      // e.g., "context.status == completed", "context.amount > 100"
+      const comparisonMatch = condition.match(
+        /^context\.([a-zA-Z0-9_.]+)\s*(===?|!==?|>=?|<=?|==)\s*(.+)$/
+      );
+
+      if (comparisonMatch) {
+        const [, path, operator, rawValue] = comparisonMatch;
+        const actualValue = this.getContextValue(context, path);
+        const expectedValue = rawValue.trim().replace(/^['"]|['"]$/g, ''); // Strip quotes
+
+        switch (operator) {
+          case '==':
+          case '===':
+            return String(actualValue) === expectedValue;
+          case '!=':
+          case '!==':
+            return String(actualValue) !== expectedValue;
+          case '>':
+            return Number(actualValue) > Number(expectedValue);
+          case '>=':
+            return Number(actualValue) >= Number(expectedValue);
+          case '<':
+            return Number(actualValue) < Number(expectedValue);
+          case '<=':
+            return Number(actualValue) <= Number(expectedValue);
+          default:
+            return false;
+        }
       }
 
-      // Simple expression evaluation
-      const func = new Function('context', `return Boolean(${condition})`);
-      return func(context);
+      // Support for simple truthy check: "context.propertyName"
+      const truthyMatch = condition.match(/^context\.([a-zA-Z0-9_.]+)$/);
+      if (truthyMatch) {
+        const value = this.getContextValue(context, truthyMatch[1]);
+        return Boolean(value);
+      }
+
+      // Support for negation: "!context.propertyName"
+      const negationMatch = condition.match(/^!context\.([a-zA-Z0-9_.]+)$/);
+      if (negationMatch) {
+        const value = this.getContextValue(context, negationMatch[1]);
+        return !value;
+      }
+
+      // Support for simple boolean literals
+      if (condition === 'true') return true;
+      if (condition === 'false') return false;
+
+      logger.warn('Unsupported condition format', { condition });
+      return false;
     } catch (error) {
       logger.error('Condition evaluation failed', error, { condition });
       return false;

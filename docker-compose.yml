@@ -36,14 +36,22 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 3001
       MONGODB_URI: mongodb://admin:password123@mongodb:27017/business-automation?authSource=admin
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      JWT_EXPIRES_IN: 7d
-      CORS_ORIGIN: http://localhost:3001
+      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-secure-secret-at-least-32-chars}
+      JWT_ISSUER: business-automation
+      JWT_AUDIENCE: business-automation-users
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      CORS_ORIGIN: http://localhost:3000
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      GROK_API_KEY: ${GROK_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GOOGLE_AI_API_KEY: ${GOOGLE_AI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-1.5-flash}
     ports:
-      - "3000:3000"
+      - "3001:3001"
     depends_on:
       - mongodb
       - redis
@@ -60,9 +68,9 @@ services:
     container_name: business-automation-frontend
     restart: unless-stopped
     environment:
-      REACT_APP_API_URL: http://localhost:3000
+      REACT_APP_API_URL: http://localhost:3001/api
     ports:
-      - "3001:80"
+      - "3000:80"
     depends_on:
       - api-gateway
     networks:

@@ -29,9 +29,10 @@ export class CredentialManager {
     try {
       const plaintext = JSON.stringify(data);
       const iv = crypto.randomBytes(this.ivLength);
+      const aad = Buffer.from('integration-credentials');
 
-      const cipher = crypto.createCipher(this.algorithm, this.encryptionKey);
-      cipher.setAAD(Buffer.from('integration-credentials'));
+      const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
+      cipher.setAAD(aad);
 
       let encrypted = cipher.update(plaintext, 'utf8', 'hex');
       encrypted += cipher.final('hex');
@@ -57,9 +58,10 @@ export class CredentialManager {
       const ivAndTag = Buffer.from(credentials.iv, 'hex');
       const iv = ivAndTag.slice(0, this.ivLength);
       const tag = ivAndTag.slice(this.ivLength);
+      const aad = Buffer.from('integration-credentials');
 
-      const decipher = crypto.createDecipher(credentials.algorithm, this.encryptionKey);
-      decipher.setAAD(Buffer.from('integration-credentials'));
+      const decipher = crypto.createDecipheriv(credentials.algorithm, this.encryptionKey, iv);
+      decipher.setAAD(aad);
       decipher.setAuthTag(tag);
 
       let decrypted = decipher.update(credentials.encrypted, 'hex', 'utf8');

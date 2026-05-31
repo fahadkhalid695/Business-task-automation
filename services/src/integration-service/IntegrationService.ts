@@ -449,7 +449,7 @@ export class IntegrationService extends EventEmitter {
     operation: () => Promise<T>,
     operationId: string
   ): Promise<T> {
-    let lastError: Error;
+    let lastError: Error | undefined;
     
     for (let attempt = 1; attempt <= this.retryConfig.maxAttempts; attempt++) {
       try {
@@ -475,7 +475,7 @@ export class IntegrationService extends EventEmitter {
       }
     }
     
-    throw lastError;
+    throw lastError || new Error(`Operation ${operationId} failed after ${this.retryConfig.maxAttempts} attempts`);
   }
 
   /**
@@ -569,7 +569,7 @@ export class IntegrationService extends EventEmitter {
   private emitIntegrationEvent(
     type: IntegrationEventType,
     integrationId: string,
-    service: ExternalService,
+    service: ExternalService | string,
     data: any
   ): void {
     const event: IntegrationEvent = {

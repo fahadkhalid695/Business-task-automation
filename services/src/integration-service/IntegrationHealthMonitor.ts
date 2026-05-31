@@ -10,7 +10,7 @@ import { logger } from '../shared/utils/logger';
  * IntegrationHealthMonitor - Monitors health and performance of integrations
  */
 export class IntegrationHealthMonitor extends EventEmitter {
-  private monitoringIntervals: Map<string, NodeJS.Timer>;
+  private monitoringIntervals: Map<string, ReturnType<typeof setInterval>>;
   private healthStatuses: Map<string, HealthStatus>;
   private adapters: Map<string, IntegrationAdapter>;
   private monitoringConfig: {

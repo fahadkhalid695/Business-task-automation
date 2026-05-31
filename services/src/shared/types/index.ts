@@ -1,14 +1,39 @@
+export enum ExternalService {
+  GMAIL = 'gmail',
+  OUTLOOK = 'outlook',
+  SLACK = 'slack',
+  TEAMS = 'teams',
+  SALESFORCE = 'salesforce',
+  HUBSPOT = 'hubspot',
+  JIRA = 'jira',
+  TRELLO = 'trello',
+  GOOGLE_DRIVE = 'google-drive',
+  ONEDRIVE = 'onedrive',
+  DROPBOX = 'dropbox',
+  MICROSOFT_TEAMS = 'microsoft_teams'
+}
+
 export interface Integration {
   id: string;
-  name: string;
-  type: ExternalService;
-  status: 'active' | 'inactive' | 'error';
-  config: Record<string, any>;
+  name?: string;
+  service: ExternalService | string;
+  credentials: any;
+  configuration?: any;
+  isActive: boolean;
+  lastSync?: Date;
+  syncStatus: SyncStatus;
+  errorCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export type SyncStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
+export enum SyncStatus {
+  NEVER_SYNCED = 'never_synced',
+  IN_PROGRESS = 'in_progress',
+  SUCCESS = 'success',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled'
+}
 
 export interface SyncJob {
   id: string;

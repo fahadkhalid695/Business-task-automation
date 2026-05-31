@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { User } from '../types';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 interface AuthState {
   user: User | null;
@@ -32,16 +35,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
 
-  const login = async (email: string, password: string) => {
+  // Validate existing token on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken && storedToken !== 'mock-token') {
+      setToken(storedToken);
+      setIsAuthenticated(true);
+    } else if (storedToken === 'mock-token') {
+      // Clear stale mock tokens
+      localStorage.removeItem('token');
+      setToken(null);
+      setIsAuthenticated(false);
+    }
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Mock login for now - will be replaced with actual auth service
-      const mockUser: User = {
-        id: '1',
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
-        role: 'user' as any,
+        password,
+      });
+
+      const { token: authToken, user: userData } = response.data.data;
+
+      // Map backend user to frontend User type
+      const mappedUser: User = {
+        id: userData.id,
+        email: userData.email,
+        role: userData.role as any,
         permissions: [],
         preferences: {
           theme: 'light',
@@ -64,28 +88,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      
-      setUser(mockUser);
-      setToken('mock-token');
+
+      setUser(mappedUser);
+      setToken(authToken);
       setIsAuthenticated(true);
-      localStorage.setItem('token', 'mock-token');
-    } catch (error) {
-      console.error('Login failed:', error);
+      localStorage.setItem('token', authToken);
+    } catch (error: any) {
+      console.error('Login failed:', error?.response?.data?.message || error.message);
+      setIsAuthenticated(false);
+      throw new Error(error?.response?.data?.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
     localStorage.removeItem('token');
-  };
+  }, []);
 
-  const updateUser = (newUser: User) => {
+  const updateUser = useCallback((newUser: User) => {
     setUser(newUser);
-  };
+  }, []);
 
   const value: AuthContextType = {
     user,

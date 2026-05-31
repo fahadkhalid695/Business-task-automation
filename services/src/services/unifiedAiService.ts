@@ -1,7 +1,8 @@
 import { aiService } from './aiService';
 import { grokService } from './grokService';
+import { geminiService } from './geminiService';
 
-type AIProvider = 'openai' | 'grok';
+type AIProvider = 'openai' | 'grok' | 'gemini';
 
 interface AIServiceOptions {
   model?: string;
@@ -16,27 +17,61 @@ class UnifiedAIService {
 
   constructor() {
     // Determine primary provider based on environment variables
-    this.currentProvider = process.env.AI_PROVIDER as AIProvider || 'grok';
-    this.fallbackProvider = this.currentProvider === 'openai' ? 'grok' : 'openai';
+    this.currentProvider = (process.env.AI_PROVIDER as AIProvider) || 'grok';
+    this.fallbackProvider = this.determineFallback(this.currentProvider);
     
     console.log(`AI Service initialized with primary provider: ${this.currentProvider}`);
+    console.log(`Fallback provider: ${this.fallbackProvider}`);
   }
 
-  private getService() {
-    return this.currentProvider === 'openai' ? aiService : grokService;
+  /**
+   * Determine the best fallback provider based on available API keys
+   */
+  private determineFallback(primary: AIProvider): AIProvider {
+    const hasOpenAI = !!process.env.OPENAI_API_KEY;
+    const hasGrok = !!(process.env.GROK_API_KEY || process.env.XAI_API_KEY);
+    const hasGemini = !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY);
+
+    // Pick the first available provider that isn't the primary
+    const fallbackOrder: AIProvider[] = ['gemini', 'openai', 'grok'];
+    const available: Record<AIProvider, boolean> = { openai: hasOpenAI, grok: hasGrok, gemini: hasGemini };
+
+    for (const provider of fallbackOrder) {
+      if (provider !== primary && available[provider]) {
+        return provider;
+      }
+    }
+
+    // Default fallback if no keys are configured
+    return primary === 'openai' ? 'gemini' : 'openai';
+  }
+
+  private getService(provider?: AIProvider) {
+    const p = provider || this.currentProvider;
+    switch (p) {
+      case 'openai': return aiService;
+      case 'grok': return grokService;
+      case 'gemini': return geminiService;
+      default: return grokService;
+    }
   }
 
   private getFallbackService() {
-    return this.fallbackProvider === 'openai' ? aiService : grokService;
+    return this.getService(this.fallbackProvider);
   }
 
   async switchProvider(provider: AIProvider): Promise<void> {
     this.currentProvider = provider;
-    console.log(`Switched AI provider to: ${provider}`);
+    this.fallbackProvider = this.determineFallback(provider);
+    console.log(`Switched AI provider to: ${provider}, fallback: ${this.fallbackProvider}`);
   }
 
   getCurrentProvider(): AIProvider {
     return this.currentProvider;
+  }
+
+  getFallbackProvider(): AIProvider {
+    return this.fallbackProvider;
   }
 
   private async executeWithFallback<T>(
@@ -52,7 +87,7 @@ class UnifiedAIService {
         return await fallbackFn();
       } catch (fallbackError) {
         console.error(`${operation} failed with both providers:`, fallbackError);
-        throw new Error(`${operation} failed with both AI providers`);
+        throw new Error(`${operation} failed with both AI providers (${this.currentProvider} and ${this.fallbackProvider})`);
       }
     }
   }
@@ -129,52 +164,59 @@ class UnifiedAIService {
     );
   }
 
-  // Grok-specific methods (with fallback to OpenAI equivalent)
   async generateCode(description: string, language: string = 'javascript'): Promise<string> {
-    if (this.currentProvider === 'grok') {
-      try {
-        return await grokService.generateCode(description, language);
-      } catch (error) {
-        console.warn('Grok code generation failed, using OpenAI fallback');
-        // Fallback to OpenAI with custom prompt
-        return await aiService.generateText(
-          `Generate ${language} code for: ${description}\n\nProvide clean, well-commented code only.`,
-          { model: 'gpt-4', temperature: 0.3 }
-        );
+    const service = this.getService();
+    try {
+      if ('generateCode' in service) {
+        return await (service as any).generateCode(description, language);
       }
-    } else {
-      // Use OpenAI with custom prompt
-      return await aiService.generateText(
+      // Fallback to generic text generation with code prompt
+      return await service.generateText(
         `Generate ${language} code for: ${description}\n\nProvide clean, well-commented code only.`,
-        { model: 'gpt-4', temperature: 0.3 }
+        { temperature: 0.3 }
+      );
+    } catch (error) {
+      console.warn(`Code generation failed with ${this.currentProvider}, trying fallback`);
+      const fallback = this.getFallbackService();
+      if ('generateCode' in fallback) {
+        return await (fallback as any).generateCode(description, language);
+      }
+      return await fallback.generateText(
+        `Generate ${language} code for: ${description}\n\nProvide clean, well-commented code only.`,
+        { temperature: 0.3 }
       );
     }
   }
 
   async explainCode(code: string): Promise<string> {
-    if (this.currentProvider === 'grok') {
-      try {
-        return await grokService.explainCode(code);
-      } catch (error) {
-        console.warn('Grok code explanation failed, using OpenAI fallback');
-        return await aiService.generateText(
-          `Explain what this code does in simple terms:\n\n${code}`,
-          { model: 'gpt-3.5-turbo', temperature: 0.4 }
-        );
+    const service = this.getService();
+    try {
+      if ('explainCode' in service) {
+        return await (service as any).explainCode(code);
       }
-    } else {
-      return await aiService.generateText(
+      return await service.generateText(
         `Explain what this code does in simple terms:\n\n${code}`,
-        { model: 'gpt-3.5-turbo', temperature: 0.4 }
+        { temperature: 0.4 }
+      );
+    } catch (error) {
+      console.warn(`Code explanation failed with ${this.currentProvider}, trying fallback`);
+      const fallback = this.getFallbackService();
+      if ('explainCode' in fallback) {
+        return await (fallback as any).explainCode(code);
+      }
+      return await fallback.generateText(
+        `Explain what this code does in simple terms:\n\n${code}`,
+        { temperature: 0.4 }
       );
     }
   }
 
-  // Health check for both providers
+  // Health check for all providers
   async healthCheck(): Promise<{ [key in AIProvider]: boolean }> {
     const results: { [key in AIProvider]: boolean } = {
       openai: false,
-      grok: false
+      grok: false,
+      gemini: false
     };
 
     // Check OpenAI
@@ -192,6 +234,13 @@ class UnifiedAIService {
       console.warn('Grok health check failed:', error);
     }
 
+    // Check Gemini
+    try {
+      results.gemini = await geminiService.healthCheck();
+    } catch (error) {
+      console.warn('Gemini health check failed:', error);
+    }
+
     return results;
   }
 
@@ -203,6 +252,7 @@ class UnifiedAIService {
     config: {
       grokApiKey: boolean;
       openaiApiKey: boolean;
+      geminiApiKey: boolean;
     };
   }> {
     const health = await this.healthCheck();
@@ -214,6 +264,7 @@ class UnifiedAIService {
       config: {
         grokApiKey: !!(process.env.GROK_API_KEY || process.env.XAI_API_KEY),
         openaiApiKey: !!process.env.OPENAI_API_KEY,
+        geminiApiKey: !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY),
       }
     };
   }
